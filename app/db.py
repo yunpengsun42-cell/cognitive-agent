@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS posts (
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     module TEXT,
+    image_url TEXT,
     xp_gain INTEGER DEFAULT 0,
     created_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id)
@@ -178,6 +179,10 @@ def init_db():
         conn.execute("ALTER TABLE users ADD COLUMN email TEXT")
     if "is_admin" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
+    # 迁移:posts 可能没有 image_url 列
+    pcols = [r[1] for r in conn.execute("PRAGMA table_info(posts)")]
+    if "image_url" not in pcols:
+        conn.execute("ALTER TABLE posts ADD COLUMN image_url TEXT")
     conn.commit()
     cur = conn.execute("SELECT id FROM users LIMIT 1")
     if cur.fetchone() is None:

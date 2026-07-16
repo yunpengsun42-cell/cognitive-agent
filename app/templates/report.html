@@ -8,7 +8,7 @@
 </form>
 
 {% if latest %}
-<article class="card">
+<article class="panel">
 <h3>最近一期 · {{ latest.week_start }} ~ {{ latest.week_end }}</h3>
 <p class="muted">连续记录 <strong>{{ latest.streak_weeks }}</strong> 周</p>
 <p>{{ latest.summary_text }}</p>
@@ -20,7 +20,7 @@
 {% if history %}
 <h3>历史</h3>
 {% for h in history %}
-<article class="card">
+<article class="panel">
 <p class="muted">{{ h.week_start }} ~ {{ h.week_end }} · 连续 {{ h.streak_weeks }} 周</p>
 <p>{{ h.summary_text }}</p>
 </article>

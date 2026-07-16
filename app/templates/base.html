@@ -119,6 +119,15 @@ body::after{width:560px;height:560px;background:radial-gradient(circle,#8b5cf6,t
 .btn.draw{background:var(--grad);color:#08111f;border:1px solid transparent}
 .btn.draw:hover{filter:brightness(1.08)}
 .btn.sm{padding:.4rem .85rem;font-size:.82rem}
+
+/* 未加 class 的 button / submit 默认使用 primary 样式，避免 Pico 或浏览器默认丑按钮 */
+button{font-family:var(--sans);cursor:pointer;border:none;transition:.2s}
+button[type="submit"],button:not([class]){
+  display:inline-block;font-size:.92rem;font-weight:600;
+  padding:.7rem 1.4rem;border-radius:999px;border:1px solid transparent;
+  background:var(--grad);color:#08111f;box-shadow:0 10px 30px -10px rgba(52,211,230,.6);
+}
+button[type="submit"]:hover,button:not([class]):hover{filter:brightness(1.08);transform:translateY(-1px)}
 .userbox{display:flex;align-items:center;gap:.5rem}
 .userbox .lv{font-family:var(--mono);font-size:.72rem;font-weight:800;color:#08111f;background:var(--grad);padding:.12rem .5rem;border-radius:999px;white-space:nowrap}
 .userbox .uname{font-size:.84rem;color:var(--text);max-width:7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

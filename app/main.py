@@ -1,10 +1,13 @@
 from pathlib import Path
 import json
+import uuid
+import mimetypes
 from datetime import datetime
 
-from fastapi import FastAPI, Request, Form, Body
+from fastapi import FastAPI, Request, Form, Body, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 from . import db, services, seed, auth, growth
 from .scheduler import start as start_scheduler
@@ -12,9 +15,12 @@ from .prompts import DIAGNOSIS_QUESTIONS
 from .classics_data import CATEGORY_ORDER
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+UPLOAD_DIR = BASE_DIR / "data" / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 templates = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
 
 app = FastAPI(title="认知内核训练智能体")
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 
 @app.on_event("startup")
@@ -336,19 +342,41 @@ def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", c)
 
 
+# ---------------- 文件上传 ----------------
+
+@app.post("/api/upload/image")
+def api_upload_image(request: Request, file: UploadFile = File(...)):
+    u = get_current_user(request)
+    if not u:
+        return JSONResponse({"error": "请先登录"}, status_code=401)
+    if not file.content_type or not file.content_type.startswith("image/"):
+        return JSONResponse({"error": "仅支持图片文件"}, status_code=400)
+    data = file.file.read()
+    if len(data) > 5 * 1024 * 1024:
+        return JSONResponse({"error": "图片不能超过 5MB"}, status_code=400)
+    ext = mimetypes.guess_extension(file.content_type) or ".jpg"
+    if ext == ".jpe":
+        ext = ".jpg"
+    filename = f"{uuid.uuid4().hex[:16]}_{datetime.now().strftime('%Y%m%d%H%M%S')}{ext}"
+    dest = UPLOAD_DIR / filename
+    dest.write_bytes(data)
+    return {"ok": True, "url": f"/uploads/{filename}"}
+
+
 # ---------------- 社交 API ----------------
 
 @app.post("/api/post")
-def api_post(request: Request, content: str = Body(...), module: str = Body("打卡")):
+def api_post(request: Request, content: str = Body(...), module: str = Body("打卡"), image_url: str = Body("")):
     u = get_current_user(request)
     if not u:
         return JSONResponse({"error": "请先登录"}, status_code=401)
     content = (content or "").strip()
     if not content:
         return JSONResponse({"error": "内容不能为空"}, status_code=400)
+    image_url = (image_url or "").strip()
     pid = db.execute(
-        "INSERT INTO posts (user_id, content, module, xp_gain, created_at) VALUES (?,?,?,?,?)",
-        (u["id"], content, module, growth.XP_POST, _now()),
+        "INSERT INTO posts (user_id, content, module, image_url, xp_gain, created_at) VALUES (?,?,?,?,?,?)",
+        (u["id"], content, module, image_url or None, growth.XP_POST, _now()),
     )
     g = growth.award_xp(u["id"], growth.XP_POST, "post")
     return {"ok": True, "id": pid, "growth": g}

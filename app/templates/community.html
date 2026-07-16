@@ -18,7 +18,11 @@
     <div class="panel reveal" style="margin-bottom:1rem">
       <span class="meta">发一条训练打卡 / 感悟</span>
       <textarea id="postText" rows="3" placeholder="今天练了什么?有什么觉察?(支持任意模块)" style="margin-top:.6rem"></textarea>
-      <div style="display:flex;gap:.6rem;align-items:center;margin-top:.5rem">
+      <div id="imgPreviewWrap" style="display:none;position:relative;margin-top:.4rem;width:fit-content">
+        <img id="imgPreview" style="max-height:120px;max-width:100%;border-radius:10px;border:1px solid var(--line-2)">
+        <button id="removeImg" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;font-size:12px;line-height:1;padding:0">×</button>
+      </div>
+      <div style="display:flex;gap:.6rem;align-items:center;margin-top:.5rem;flex-wrap:wrap">
         <select id="postModule">
           <option value="打卡">打卡</option>
           <option value="诊断">诊断</option>
@@ -27,6 +31,10 @@
           <option value="周报">周报</option>
           <option value="感悟">感悟</option>
         </select>
+        <label class="btn ghost sm" style="cursor:pointer;position:relative">
+          <input type="file" id="postImage" accept="image/*" style="position:absolute;opacity:0;width:0;height:0">
+          🖼 图片
+        </label>
         <button class="btn primary sm" id="btnPost">发布 +15 XP</button>
       </div>
     </div>
@@ -43,6 +51,11 @@
           <span class="meta">{{ p.created_at[:10] }}</span>
         </div>
         <p style="margin:0 0 .6rem;line-height:1.7">{{ p.content }}</p>
+        {% if p.image_url %}
+        <div style="margin:0 0 .6rem">
+          <img src="{{ p.image_url }}" alt="动态图片" style="max-width:100%;max-height:260px;border-radius:12px;border:1px solid var(--line-2);object-fit:cover">
+        </div>
+        {% endif %}
         <div style="display:flex;gap:.8rem;align-items:center">
           <button class="likeBtn" data-pid="{{ p.id }}" style="background:none;border:none;cursor:pointer;color:{{ 'var(--jade)' if p.liked else 'var(--muted)' }};font-size:.85rem">
             {{ '♥ 已赞' if p.liked else '♡ 赞' }} <b>{{ p.like_count }}</b>
@@ -102,12 +115,41 @@ document.getElementById('btnPost').onclick=function(){
   var txt=document.getElementById('postText').value.trim();
   if(!txt){toast('说点什么吧');return;}
   var mod=document.getElementById('postModule').value;
-  fetch('/api/post',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({content:txt,module:mod})})
-    .then(function(r){return r.json();}).then(function(d){
-      if(d.error){toast(d.error);setTimeout(function(){location.href='/login';},800);return;}
-      toast('已发布 🎉');location.reload();
-    }).catch(function(){toast('发布失败');});
+  var doPost=function(url){
+    fetch('/api/post',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({content:txt,module:mod,image_url:url||''})})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.error){toast(d.error);setTimeout(function(){location.href='/login';},800);return;}
+        toast('已发布 🎉');location.reload();
+      }).catch(function(){toast('发布失败');});
+  };
+  if(selectedFile){
+    var fd=new FormData(); fd.append('file',selectedFile);
+    fetch('/api/upload/image',{method:'POST',body:fd})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.error){toast(d.error);return;}
+        doPost(d.url);
+      }).catch(function(){toast('图片上传失败');});
+  }else{doPost('');}
+};
+
+var selectedFile=null;
+document.getElementById('postImage').onchange=function(e){
+  var file=e.target.files[0];
+  if(!file) return;
+  selectedFile=file;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    document.getElementById('imgPreview').src=ev.target.result;
+    document.getElementById('imgPreviewWrap').style.display='block';
+  };
+  reader.readAsDataURL(file);
+};
+document.getElementById('removeImg').onclick=function(){
+  selectedFile=null;
+  document.getElementById('postImage').value='';
+  document.getElementById('imgPreviewWrap').style.display='none';
+  document.getElementById('imgPreview').src='';
 };
 {% endif %}
 document.querySelectorAll('.likeBtn').forEach(function(b){
