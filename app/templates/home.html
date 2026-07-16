@@ -1,166 +1,195 @@
 {% extends "base.html" %}
-{% block title %}首页 · 认知内核训练终端{% endblock %}
+{% block title %}仪表盘 · 认知内核训练{% endblock %}
 {% block content %}
-<style>
-/* HERO */
-.hero{display:grid;grid-template-columns:1.35fr 1fr;gap:1.2rem;align-items:stretch;margin-bottom:.5rem}
-.hero-main{display:flex;flex-direction:column;justify-content:center;padding:.4rem 0}
-.hero-title{font-size:clamp(1.9rem,4.4vw,3rem);line-height:1.12;margin:.7rem 0;font-weight:800;letter-spacing:.01em}
-.hero-title .hl{color:var(--accent)}
-.hero-sub{color:var(--muted);font-size:.95rem;line-height:1.7;margin:0 0 1.3rem}
-.hero-cta{display:flex;gap:.7rem;flex-wrap:wrap}
-.btn{display:inline-block;text-decoration:none!important}
-.btn.primary{background:var(--accent);color:#0e0f12;border:1px solid var(--accent)}
-.btn.primary:hover{background:var(--accent-soft);color:#0e0f12}
-.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line-2)}
-.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
 
-/* 今日签 */
-.sign-panel{display:flex;flex-direction:column;gap:.7rem;background:linear-gradient(160deg,var(--bg-2),var(--bg-3))}
-.sign-head{display:flex;justify-content:space-between;align-items:center}
-.sign-ref{font-family:var(--mono);font-size:.74rem;color:var(--muted);letter-spacing:.05em}
-.sign-text{font-family:var(--serif);font-size:1.18rem;line-height:1.85;color:var(--text);margin:.4rem 0 .6rem;padding-left:.8rem;border-left:2px solid var(--accent);quotes:none}
-.sign-yiji{display:flex;gap:1rem;font-family:var(--mono);font-size:.78rem;letter-spacing:.05em}
-.sign-yiji .yi{color:var(--jade)} .sign-yiji .yi b{color:var(--jade)}
-.sign-yiji .ji{color:var(--danger)} .sign-yiji .ji b{color:var(--danger)}
-.sign-foot{margin-top:auto}
-.sign-foot .link{font-family:var(--mono);font-size:.78rem;text-decoration:none}
-
-/* 模块网格 */
-.modules{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-.module{display:flex;flex-direction:column;gap:.45rem;text-decoration:none;color:var(--text);padding:1.3rem 1.3rem 1.1rem}
-.module h3{color:var(--text);font-size:1.08rem;margin:.2rem 0}
-.module .m-no{font-family:var(--mono);font-size:1.5rem;color:var(--line-2);font-weight:800;line-height:1}
-.module .m-go{font-family:var(--mono);font-size:.8rem;color:var(--accent);margin-top:.3rem}
-.module .led{position:absolute;top:1.1rem;right:1.1rem;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
-.module .led.jade{background:var(--jade);box-shadow:0 0 8px var(--jade)}
-
-/* 数据流入 */
-.feed{display:flex;flex-direction:column}
-.feed-row{display:grid;grid-template-columns:90px 1fr;gap:.9rem;padding:.8rem 0;border-bottom:1px solid var(--line)}
-.feed-row:last-child{border-bottom:none}
-.feed-main strong{font-weight:600}
-.feed-main p{margin:.2rem 0 0}
-
-.row{display:flex;gap:.6rem;align-items:center;margin-bottom:.6rem}
-.row select{flex:0 0 150px}
-
-@media (max-width:760px){
-  .hero{grid-template-columns:1fr}
-  .modules{grid-template-columns:1fr}
-  .feed-row{grid-template-columns:70px 1fr}
-}
-</style>
-
-<!-- ============ 00 / HERO + 今日签 ============ -->
-<section class="hero">
-  <div class="hero-main">
-    <span class="meta">// 系统就绪 · 今天是训练的第 {{ streak }} 周</span>
-    <h1 class="hero-title">把每一个念头<br>都当成一次<span class="hl">训练</span>。</h1>
-    <p class="hero-sub">诊断你的决策偏差 · 推演今日场景 · 抽取国学智慧 · 生成每周复盘。<br>一台属于你自己的"认知仪器"。</p>
-    <div class="hero-cta">
-      <a class="btn primary" href="/diagnosis">开始诊断 →</a>
-      <a class="btn ghost" href="/classics">抽一张国学卡</a>
+<!-- ============ HERO ============ -->
+<section class="hero reveal" style="display:grid;grid-template-columns:1.3fr 1fr;gap:1.6rem;align-items:center;margin-bottom:1rem">
+  <div>
+    <span class="meta">// 神经可塑性训练系统 · 第 {{ streak }} 周</span>
+    <h1 style="font-size:clamp(2rem,4.6vw,3.2rem);line-height:1.1;margin:.8rem 0;font-weight:850;letter-spacing:.01em">
+      科学训练你的<br><span style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">认知内核</span>。
+    </h1>
+    <p class="muted" style="font-size:1rem;line-height:1.75;margin:0 0 1.5rem;max-width:34rem">
+      基于注意力、记忆、逻辑、执行、元认知、情绪调节六大内核维度，用诊断定位短板、用场景推演刻意练习、用国学补给涵养心智、用周报沉淀复盘——一套可量化、可追踪的系统训练。
+    </p>
+    <div style="display:flex;gap:.7rem;flex-wrap:wrap">
+      <a class="btn primary" href="/diagnosis">开始认知诊断 →</a>
+      <a class="btn ghost" href="#path">查看训练路径</a>
     </div>
   </div>
 
-  <aside class="sign-panel panel" id="signPanel">
-    <div class="sign-head">
-      <span class="meta">今日签 / DAILY SIGN</span>
-      <span class="tag accent" id="signCode">··</span>
+  <aside class="panel" style="padding:1.3rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+      <span class="meta">认知内核图谱</span>
+      <span class="tag grad">示意基线</span>
     </div>
-    <div class="sign-body">
-      <div class="sign-ref" id="signRef">—</div>
-      <blockquote class="sign-text" id="signText">正在抽取…</blockquote>
-      <div class="sign-yiji">
-        <span class="yi">宜 <b id="signYi">—</b></span>
-        <span class="ji">忌 <b id="signJi">—</b></span>
-      </div>
+    <div class="radar-wrap">
+      <svg id="radar" viewBox="0 0 340 340" role="img" aria-label="认知内核六维雷达图"></svg>
     </div>
-    <div class="sign-foot">
-      <a class="link" href="/classics">去国学卡 →</a>
-    </div>
+    <p class="muted" style="font-size:.8rem;margin:.4rem 0 0;text-align:center">
+      完成 12 题诊断，解锁你的专属内核图谱与短板分析。
+    </p>
   </aside>
 </section>
 
-<!-- ============ 01 / 训练模块 ============ -->
-<div class="sec"><span class="no">01</span><h2>训练模块</h2><span class="line"></span></div>
-<div class="modules">
-  <a class="module panel" href="/diagnosis">
-    <span class="m-no">01</span><span class="led"></span>
-    <h3>认知诊断</h3>
-    <p class="muted">12 题看清你的决策风格、情绪敏感源与认知偏差倾向。</p>
-    <span class="m-go">进入 →</span>
+<!-- ============ 状态条 ============ -->
+<div class="reveal d1" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.5rem 0">
+  <div class="panel" style="padding:1.1rem 1.3rem;display:flex;align-items:center;gap:.9rem">
+    <div style="font-family:var(--mono);font-size:1.7rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">{{ streak }}</div>
+    <div><div style="font-size:.92rem;font-weight:600">连续训练周</div><div class="meta">STREAK</div></div>
+  </div>
+  <div class="panel" style="padding:1.1rem 1.3rem;display:flex;align-items:center;gap:.9rem">
+    <div style="font-family:var(--mono);font-size:1.7rem;font-weight:800;color:var(--accent)">{{ '有' if has_profile else '未' }}</div>
+    <div><div style="font-size:.92rem;font-weight:600">{{ '诊断画像已建立' if has_profile else '尚待首次诊断' }}</div><div class="meta">PROFILE</div></div>
+  </div>
+  <div class="panel" style="padding:1.1rem 1.3rem;display:flex;align-items:center;gap:.9rem">
+    <div style="font-family:var(--mono);font-size:1.7rem;font-weight:800;color:var(--accent-2)">6</div>
+    <div><div style="font-size:.92rem;font-weight:600">内核训练维度</div><div class="meta">DIMENSIONS</div></div>
+  </div>
+</div>
+
+<!-- ============ 能力维度 ============ -->
+<div class="sec reveal d2"><span class="no">01</span><h2>六大认知内核</h2><span class="line"></span></div>
+<div class="dim-grid reveal d2">
+  <a class="dim" href="/diagnosis">
+    <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/></svg></div>
+    <div class="en">ATTENTION</div>
+    <h3>注意力</h3>
+    <p>聚焦目标、过滤干扰，在前额叶调控下维持稳定专注。</p>
+    <div class="bar"><i style="--w:62%"></i></div><span class="pct">62%</span>
   </a>
-  <a class="module panel" href="/#scenario">
-    <span class="m-no">02</span><span class="led"></span>
-    <h3>场景推演</h3>
-    <p class="muted">每天一道贴合你画像的情境题,在作答里练习判断。</p>
-    <span class="m-go">进入 →</span>
+  <a class="dim" href="/diagnosis">
+    <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+    <div class="en">MEMORY</div>
+    <h3>记忆力</h3>
+    <p>编码、巩固与提取，工作记忆是你的实时心智工作台。</p>
+    <div class="bar"><i style="--w:48%"></i></div><span class="pct">48%</span>
   </a>
-  <a class="module panel" href="/classics">
-    <span class="m-no">03</span><span class="led jade"></span>
-    <h3>国学卡</h3>
-    <p class="muted">道家 · 儒家 · 兵家 · 易理 · 诗词 · 法家 · 养生,抽一张原文。</p>
-    <span class="m-go">进入 →</span>
+  <a class="dim" href="/diagnosis">
+    <div class="ico"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 7l3 9M16 7l-3 9"/></svg></div>
+    <div class="en">REASONING</div>
+    <h3>逻辑</h3>
+    <p>推演、归纳与判断，在不确定中形成可靠结论。</p>
+    <div class="bar"><i style="--w:71%"></i></div><span class="pct">71%</span>
   </a>
-  <a class="module panel" href="/report">
-    <span class="m-no">04</span><span class="led"></span>
-    <h3>每周复盘</h3>
-    <p class="muted">把一周的记录汇成结构化周报,连续记录满 {{ streak }} 周。</p>
-    <span class="m-go">进入 →</span>
+  <a class="dim" href="/diagnosis">
+    <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg></div>
+    <div class="en">EXECUTIVE</div>
+    <h3>执行功能</h3>
+    <p>计划、抑制与灵活切换，把意图落成有序行动。</p>
+    <div class="bar"><i style="--w:55%"></i></div><span class="pct">55%</span>
+  </a>
+  <a class="dim" href="/diagnosis">
+    <div class="ico"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+    <div class="en">METACOG</div>
+    <h3>元认知</h3>
+    <p>对思考的思考——觉察偏差、调控策略、校准判断。</p>
+    <div class="bar"><i style="--w:44%"></i></div><span class="pct">44%</span>
+  </a>
+  <a class="dim" href="/diagnosis">
+    <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 13c2.5 0 2.5-4 5-4s2.5 4 5 4 2.5-4 5-4 2.5 4 5 4"/><path d="M3 18c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3"/></svg></div>
+    <div class="en">REGULATION</div>
+    <h3>情绪调节</h3>
+    <p>在波动中稳住定力，让决策不被情绪劫持。</p>
+    <div class="bar"><i style="--w:66%"></i></div><span class="pct">66%</span>
   </a>
 </div>
 
-<!-- ============ 02 / 今日推演 ============ -->
-<div class="sec" id="scenario"><span class="no">02</span><h2>今日场景推演</h2><span class="line"></span></div>
-{% if not has_profile %}
-<article class="panel"><strong>还没有诊断画像</strong><br>
-<a href="/diagnosis">先花 5 分钟完成 12 题诊断,推演题才会贴合你 →</a></article>
-{% elif scenario %}
-<article class="panel scene">
-  <span class="meta">SCENARIO · {{ scenario.question_date }}</span>
-  <h3>{{ scenario.question_text }}</h3>
-  <form method="post" action="/scenario/answer">
-    <textarea name="raw_text" rows="3" placeholder="写下你的判断 / 做法…"></textarea>
-    <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
-    <button type="submit">提交作答</button>
-  </form>
-</article>
-{% else %}
-<article class="panel"><span class="muted">今日推演题尚未生成(每日首次访问自动生成)。<a href="/">刷新一下</a>。</span></article>
-{% endif %}
-
-<!-- ============ 03 / 待办提醒 ============ -->
-{% if reminders %}
-<div class="sec"><span class="no">03</span><h2>待处理提醒</h2><span class="line"></span></div>
-{% for r in reminders %}
-<article class="panel reminder">
-  <h3>{{ r.title }}</h3>
-  <p>{{ r.content_text }}</p>
-  <form method="post" action="/reminders/{{ r.id }}/read">
-    <button type="submit">知道了</button>
-  </form>
-</article>
-{% endfor %}
-{% endif %}
-
-<!-- ============ 04 / 数据流入 ============ -->
-<div class="sec"><span class="no">04</span><h2>数据流入 · 今日要闻</h2><span class="line"></span></div>
-<div class="feed">
-{% for n in news %}
-  <article class="feed-row">
-    <span class="meta">{{ n.category }}</span>
-    <div class="feed-main"><strong>{{ n.title }}</strong><p class="muted">{{ n.summary }}</p></div>
-  </article>
-{% else %}
-  <p class="muted">今日要闻尚未抓取(每日 07:00 自动更新)。</p>
-{% endfor %}
+<!-- ============ 训练路径 ============ -->
+<div class="sec reveal d3" id="path"><span class="no">02</span><h2>系统训练路径</h2><span class="line"></span></div>
+<div class="path reveal d3">
+  <div class="step">
+    <span class="n">STEP 01</span><h4>评估诊断</h4>
+    <p>12 题定位你的认知风格与短板维度。</p><span class="arrow">→</span>
+  </div>
+  <div class="step">
+    <span class="n">STEP 02</span><h4>场景推演</h4>
+    <p>每日贴合画像的情境题，在作答里刻意练习。</p><span class="arrow">→</span>
+  </div>
+  <div class="step">
+    <span class="n">STEP 03</span><h4>国学补给</h4>
+    <p>抽取典籍原文涵养心智，留白处自己体会。</p><span class="arrow">→</span>
+  </div>
+  <div class="step">
+    <span class="n">STEP 04</span><h4>周报复盘</h4>
+    <p>把一周记录汇成结构化报告，看见成长曲线。</p>
+  </div>
 </div>
 
-<!-- ============ 05 / 记一笔 ============ -->
-<div class="sec"><span class="no">05</span><h2>记一笔</h2><span class="line"></span></div>
-<form class="panel" method="post" action="/practice/new">
+<!-- ============ 今日推演 + 双栏 ============ -->
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:1rem;margin-top:1.5rem">
+  <!-- 今日推演 -->
+  <div class="reveal d4">
+    <div class="sec" style="margin-top:0"><span class="no">03</span><h2>今日场景推演</h2><span class="line"></span></div>
+    {% if not has_profile %}
+    <article class="panel"><strong>还没有诊断画像</strong><br>
+    <a href="/diagnosis">先花 5 分钟完成 12 题诊断，推演题才会贴合你 →</a></article>
+    {% elif scenario %}
+    <article class="panel scene">
+      <span class="meta">SCENARIO · {{ scenario.question_date }}</span>
+      <h3 style="margin:.5rem 0;font-size:1.1rem">{{ scenario.question_text }}</h3>
+      <form method="post" action="/scenario/answer">
+        <textarea name="raw_text" rows="3" placeholder="写下你的判断 / 做法…"></textarea>
+        <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+        <button type="submit" class="btn primary">提交作答</button>
+      </form>
+    </article>
+    {% else %}
+    <article class="panel"><span class="muted">今日推演题尚未生成（每日首次访问自动生成）。<a href="/">刷新一下</a>。</span></article>
+    {% endif %}
+
+    <!-- 国学补给站 -->
+    <div class="sec"><span class="no">04</span><h2>心智补给站</h2><span class="line"></span></div>
+    <article class="panel" id="signPanel" style="display:flex;flex-direction:column;gap:.7rem">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="meta">今日签 / DAILY SIGN</span>
+        <span class="tag accent" id="signCode">··</span>
+      </div>
+      <div class="sign-ref" id="signRef" style="font-family:var(--mono);font-size:.74rem;color:var(--muted)">—</div>
+      <blockquote id="signText" style="font-family:var(--serif);font-size:1.15rem;line-height:1.85;margin:.3rem 0 .5rem;padding-left:.8rem;border-left:2px solid var(--accent);quotes:none">正在抽取…</blockquote>
+      <div style="display:flex;gap:1.2rem;font-family:var(--mono);font-size:.78rem">
+        <span style="color:var(--jade)">宜 <b id="signYi">—</b></span>
+        <span style="color:var(--danger)">忌 <b id="signJi">—</b></span>
+      </div>
+      <a class="btn line" href="/classics" style="margin-top:.4rem;align-self:flex-start">去抽一张国学卡 →</a>
+    </article>
+  </div>
+
+  <!-- 右栏：科学背书 + 要闻 -->
+  <div class="reveal d5">
+    <div class="sec" style="margin-top:0"><span class="no">05</span><h2>训练的科学底基</h2><span class="line"></span></div>
+    <article class="panel" style="padding:1.2rem">
+      <p style="font-size:.86rem;line-height:1.7;color:var(--muted);margin:0 0 .9rem">
+        内核训练建立在<strong style="color:var(--text)">神经可塑性</strong>之上：大脑能随有针对性的练习重组神经连接。我们采用国际经典实验范式转化为日常训练。
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+        <span class="tag accent">N-back 工作记忆</span>
+        <span class="tag accent">Stroop 干扰抑制</span>
+        <span class="tag accent">Go/No-Go 冲动控制</span>
+        <span class="tag jade">舒尔特 注意广度</span>
+        <span class="tag jade">间隔重复</span>
+      </div>
+    </article>
+
+    <div class="sec"><span class="no">06</span><h2>数据流入 · 今日要闻</h2><span class="line"></span></div>
+    <div class="panel" style="padding:0 1.2rem">
+      <div class="feed">
+      {% for n in news %}
+        <article class="feed-row">
+          <span class="meta">{{ n.category }}</span>
+          <div class="feed-main"><strong>{{ n.title }}</strong><p class="muted">{{ n.summary }}</p></div>
+        </article>
+      {% else %}
+        <p class="muted" style="padding:1rem 0">今日要闻尚未抓取（每日 07:00 自动更新）。</p>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 记一笔 ============ -->
+<div class="sec reveal d6"><span class="no">07</span><h2>记一笔</h2><span class="line"></span></div>
+<form class="panel reveal d6" method="post" action="/practice/new" style="display:flex;flex-direction:column;gap:.7rem">
   <div class="row">
     <select name="entry_type">
       <option value="decision">决策</option>
@@ -168,9 +197,9 @@
       <option value="news_reflection">新闻反思</option>
       <option value="daoist_practice">国学实践</option>
     </select>
-    <button type="submit">保存</button>
+    <button type="submit" class="btn primary">保存</button>
   </div>
-  <textarea name="raw_text" rows="3" placeholder="刚才发生了什么?你的念头 / 选择?"></textarea>
+  <textarea name="raw_text" rows="3" placeholder="刚才发生了什么？你的念头 / 选择？"></textarea>
 </form>
 
 <script>
@@ -179,18 +208,49 @@ const CATEGORY_JI = {
   "道家":"强为","儒家":"放纵","兵家":"轻动","易理":"执固",
   "诗词":"喧扰","法家":"徇私","养生":"耗神"
 };
+// 今日签
 (function(){
   if(!CLASSICS.length) return;
-  // 今日签:按日期确定性抽取(同一天同一张)
-  var d = new Date();
-  var key = d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
-  var h = 0; for(var i=0;i<key.length;i++){ h=(h*31+key.charCodeAt(i))>>>0; }
-  var c = CLASSICS[h % CLASSICS.length];
-  document.getElementById('signCode').textContent = c.code;
-  document.getElementById('signRef').textContent = c.book + " · " + c.chapter;
-  document.getElementById('signText').textContent = "“" + c.text + "”";
-  document.getElementById('signYi').textContent = c.yi || "守中";
-  document.getElementById('signJi').textContent = CATEGORY_JI[c.category] || "妄动";
+  var d=new Date(), key=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+  var h=0; for(var i=0;i<key.length;i++){h=(h*31+key.charCodeAt(i))>>>0;}
+  var c=CLASSICS[h%CLASSICS.length];
+  var sc=document.getElementById('signCode'); if(sc)sc.textContent=c.code;
+  var sr=document.getElementById('signRef'); if(sr)sr.textContent=c.book+" · "+c.chapter;
+  var st=document.getElementById('signText'); if(st)st.textContent="“"+c.text+"”";
+  var sy=document.getElementById('signYi'); if(sy)sy.textContent=c.yi||"守中";
+  var sj=document.getElementById('signJi'); if(sj)sj.textContent=CATEGORY_JI[c.category]||"妄动";
+})();
+
+// 雷达图
+(function(){
+  var DIMS=[
+    {k:"注意",w:62},{k:"记忆",w:48},{k:"逻辑",w:71},
+    {k:"执行",w:55},{k:"元认知",w:44},{k:"心稳",w:66}
+  ];
+  var cx=170,cy=170,R=120,n=DIMS.length;
+  var ang=function(i){return (-90+i*360/n)*Math.PI/180;};
+  var grid="",axes="",labels="",pts="",dots="";
+  [0.25,0.5,0.75,1].forEach(function(f){
+    var p="";
+    for(var i=0;i<n;i++){var x=cx+R*f*Math.cos(ang(i)),y=cy+R*f*Math.sin(ang(i));p+=(x.toFixed(1)+","+y.toFixed(1)+" ");}
+    grid+='<polygon class="radar-grid" points="'+p.trim()+'"/>';
+  });
+  DIMS.forEach(function(d,i){
+    var x=cx+R*Math.cos(ang(i)),y=cy+R*Math.sin(ang(i));
+    axes+='<line class="radar-axis" x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'"/>';
+    var lx=cx+(R+26)*Math.cos(ang(i)),ly=cy+(R+26)*Math.sin(ang(i));
+    var anchor="middle"; if(lx<cx-5)anchor="end"; else if(lx>cx+5)anchor="start";
+    labels+='<text class="radar-label" x="'+lx.toFixed(1)+'" y="'+(ly+3).toFixed(1)+'" text-anchor="'+anchor+'">'+d.k+'</text>';
+    var dr=R*(d.w/100);
+    var dx=cx+dr*Math.cos(ang(i)),dy=cy+dr*Math.sin(ang(i));
+    pts+=(dx.toFixed(1)+","+dy.toFixed(1)+" ");
+    dots+='<circle class="radar-dot" cx="'+dx.toFixed(1)+'" cy="'+dy.toFixed(1)+'" r="3"/>';
+  });
+  var svg=document.getElementById('radar');
+  if(svg) svg.innerHTML='<defs><linearGradient id="radarGrad" x1="0" y1="0" x2="1" y2="1">'+
+    '<stop offset="0%" stop-color="#34d3e6" stop-opacity=".55"/>'+
+    '<stop offset="100%" stop-color="#8b5cf6" stop-opacity=".55"/></linearGradient></defs>'+
+    grid+axes+'<polygon class="radar-area" points="'+pts.trim()+'"/>'+dots+labels;
 })();
 </script>
 {% endblock %}
