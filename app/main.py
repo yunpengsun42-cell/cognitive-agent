@@ -354,9 +354,15 @@ def api_upload_image(request: Request, file: UploadFile = File(...)):
     data = file.file.read()
     if len(data) > 5 * 1024 * 1024:
         return JSONResponse({"error": "图片不能超过 5MB"}, status_code=400)
-    ext = mimetypes.guess_extension(file.content_type) or ".jpg"
-    if ext == ".jpe":
+    ext = mimetypes.guess_extension(file.content_type) or ""
+    if ext in (".jpe", ".jpeg"):
         ext = ".jpg"
+    # 安全白名单:拒绝 SVG 等可被执行脚本的格式,防止存储型 XSS
+    if ext not in (".jpg", ".png", ".gif", ".webp"):
+        return JSONResponse(
+            {"error": "不支持的图片格式,仅支持 jpg / png / gif / webp"},
+            status_code=400,
+        )
     filename = f"{uuid.uuid4().hex[:16]}_{datetime.now().strftime('%Y%m%d%H%M%S')}{ext}"
     dest = UPLOAD_DIR / filename
     dest.write_bytes(data)
@@ -374,6 +380,9 @@ def api_post(request: Request, content: str = Body(...), module: str = Body("打
     if not content:
         return JSONResponse({"error": "内容不能为空"}, status_code=400)
     image_url = (image_url or "").strip()
+    # 仅允许站内上传的图片,避免外链追踪/钓鱼与潜在 XSS
+    if image_url and not image_url.startswith("/uploads/"):
+        image_url = ""
     pid = db.execute(
         "INSERT INTO posts (user_id, content, module, image_url, xp_gain, created_at) VALUES (?,?,?,?,?,?)",
         (u["id"], content, module, image_url or None, growth.XP_POST, _now()),
