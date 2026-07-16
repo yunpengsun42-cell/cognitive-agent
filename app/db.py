@@ -103,6 +103,64 @@ CREATE TABLE IF NOT EXISTS reminders (
     is_read INTEGER DEFAULT 0,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS user_growth (
+    user_id INTEGER PRIMARY KEY,
+    xp INTEGER NOT NULL DEFAULT 0,
+    level INTEGER NOT NULL DEFAULT 1,
+    streak_days INTEGER NOT NULL DEFAULT 0,
+    last_active_date TEXT,
+    badges TEXT NOT NULL DEFAULT '[]',
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS classics_fav (
+    user_id INTEGER NOT NULL,
+    classic_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(user_id, classic_id),
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(classic_id) REFERENCES classics(id)
+);
+CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    module TEXT,
+    xp_gain INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS post_likes (
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(post_id, user_id),
+    FOREIGN KEY(post_id) REFERENCES posts(id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS post_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(post_id) REFERENCES posts(id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS usage_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    meta TEXT,
+    created_at TEXT NOT NULL
+);
 """
 
 USER_ID = 1
@@ -112,6 +170,13 @@ def init_db():
     DATA_DIR.mkdir(exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.executescript(SCHEMA)
+    # 迁移:老库 users 可能没有 username/email 列
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(users)")]
+    if "username" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN username TEXT")
+    if "email" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN email TEXT")
+    conn.commit()
     cur = conn.execute("SELECT id FROM users LIMIT 1")
     if cur.fetchone() is None:
         conn.execute(

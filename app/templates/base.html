@@ -118,6 +118,10 @@ body::after{width:560px;height:560px;background:radial-gradient(circle,#8b5cf6,t
 .btn.line:hover{border-color:var(--accent);color:var(--accent)}
 .btn.draw{background:var(--grad);color:#08111f;border:1px solid transparent}
 .btn.draw:hover{filter:brightness(1.08)}
+.btn.sm{padding:.4rem .85rem;font-size:.82rem}
+.userbox{display:flex;align-items:center;gap:.5rem}
+.userbox .lv{font-family:var(--mono);font-size:.72rem;font-weight:800;color:#08111f;background:var(--grad);padding:.12rem .5rem;border-radius:999px;white-space:nowrap}
+.userbox .uname{font-size:.84rem;color:var(--text);max-width:7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ---------- 标签 / 元信息 ---------- */
 .meta{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
@@ -223,9 +227,22 @@ button{font-family:var(--sans)}
     <a href="/" data-path="/">仪表盘</a>
     <a href="/diagnosis" data-path="/diagnosis">诊断</a>
     <a href="/classics" data-path="/classics">国学卡</a>
+    <a href="/practice" data-path="/practice">记一笔</a>
     <a href="/report" data-path="/report">周报</a>
+    <a href="/community" data-path="/community">社区</a>
   </nav>
-  <span class="status"><span class="led"></span> 系统在线</span>
+  {% if user %}
+  <div class="userbox">
+    <span class="lv">Lv.{{ growth.level if growth else 1 }}</span>
+    <span class="uname" title="{{ user.username }}">{{ user.username }}</span>
+    <a class="btn ghost sm" href="/logout">退出</a>
+  </div>
+  {% else %}
+  <div class="userbox">
+    <a class="btn ghost sm" href="/login">登录</a>
+    <a class="btn primary sm" href="/register">注册</a>
+  </div>
+  {% endif %}
 </header>
 
 <main>

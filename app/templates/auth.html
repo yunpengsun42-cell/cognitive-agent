@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ '登录' if mode=='login' else '注册' }} · 认知内核训练{% endblock %}
+{% block content %}
+<section style="max-width:430px;margin:3rem auto">
+  <div class="panel reveal" style="padding:2rem 1.8rem">
+    <span class="meta">// COGNITIVE CORE · 账户</span>
+    <h2 style="margin:.4rem 0 1.2rem;font-size:1.5rem">{{ '登录你的训练账户' if mode=='login' else '创建训练账户' }}</h2>
+    {% if error %}<p class="tag" style="color:var(--danger);border-color:var(--danger);margin-bottom:1rem">{{ error }}</p>{% endif %}
+    <form method="post" action="{{ '/login' if mode=='login' else '/register' }}">
+      <label>用户名
+        <input type="text" name="username" required autocomplete="username" placeholder="给自己起个名字">
+      </label>
+      <label>密码
+        <input type="password" name="password" required autocomplete="{{ 'current-password' if mode=='login' else 'new-password' }}" placeholder="至少 6 位">
+      </label>
+      {% if mode=='register' %}
+      <label>邮箱(可选)
+        <input type="email" name="email" autocomplete="email" placeholder="选填,用于找回">
+      </label>
+      {% endif %}
+      <button type="submit" class="btn primary" style="width:100%;margin-top:.6rem">{{ '登录' if mode=='login' else '注册并进入' }}</button>
+    </form>
+    <p class="muted" style="font-size:.85rem;margin-top:1.2rem;text-align:center">
+      {% if mode=='login' %}还没有账户? <a href="/register" style="color:var(--accent)">免费注册</a>
+      {% else %}已有账户? <a href="/login" style="color:var(--accent)">去登录</a>{% endif %}
+    </p>
+  </div>
+</section>
+{% endblock %}

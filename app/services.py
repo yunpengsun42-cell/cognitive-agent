@@ -21,10 +21,15 @@ def _now() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def get_profile_text(user_id=db.USER_ID) -> str:
+def _uid(user_id):
+    return user_id if user_id is not None else db.USER_ID
+
+
+def get_profile_text(user_id=None) -> str:
+    uid = _uid(user_id)
     row = db.query_one(
         "SELECT * FROM diagnosis_profile WHERE user_id=? ORDER BY id DESC LIMIT 1",
-        (user_id,),
+        (uid,),
     )
     if not row:
         return "（用户尚未完成诊断,暂无画像）"
@@ -37,30 +42,27 @@ def get_profile_text(user_id=db.USER_ID) -> str:
     )
 
 
-def submit_diagnosis(answers):
+def submit_diagnosis(answers, user_id=None):
     """answers: list of {question_id, question_text, answer_text}"""
-    user_id = db.USER_ID
-    # 清掉旧答案,避免重复
-    db.execute("DELETE FROM diagnosis_answers WHERE user_id=?", (user_id,))
+    uid = _uid(user_id)
+    db.execute("DELETE FROM diagnosis_answers WHERE user_id=?", (uid,))
     qa = []
     for a in answers:
         db.execute(
             "INSERT INTO diagnosis_answers (user_id, question_id, question_text, answer_text, created_at) "
             "VALUES (?,?,?,?,?)",
-            (user_id, a["question_id"], a["question_text"], a["answer_text"], _now()),
+            (uid, a["question_id"], a["question_text"], a["answer_text"], _now()),
         )
         qa.append((a["question_text"], a["answer_text"]))
     raw = call_llm(SYSTEM_PROMPT, build_profile_prompt(qa), temperature=0.5)
     prof = _parse_profile(raw)
-    db.execute(
-        "DELETE FROM diagnosis_profile WHERE user_id=?", (user_id,)
-    )
+    db.execute("DELETE FROM diagnosis_profile WHERE user_id=?", (uid,))
     db.execute(
         "INSERT INTO diagnosis_profile "
         "(user_id, decision_style, emotion_trigger, recovery_speed, bias_tendency, summary_text, version, created_at) "
         "VALUES (?,?,?,?,?,?,1,?)",
         (
-            user_id,
+            uid,
             prof.get("decision_style"),
             prof.get("emotion_trigger"),
             prof.get("recovery_speed"),
@@ -85,11 +87,12 @@ def _parse_profile(raw):
                 "recovery_speed": "", "bias_tendency": ""}
 
 
-def create_entry(entry_type, raw_text, source_ref=None):
+def create_entry(entry_type, raw_text, source_ref=None, user_id=None):
+    uid = _uid(user_id)
     eid = db.execute(
         "INSERT INTO entries (user_id, entry_type, raw_text, source_ref, created_at) "
         "VALUES (?,?,?,?,?)",
-        (db.USER_ID, entry_type, raw_text, source_ref, _now()),
+        (uid, entry_type, raw_text, source_ref, _now()),
     )
     return eid
 
@@ -100,56 +103,53 @@ def generate_followup(entry_id):
         return None
     raw = call_llm(
         SYSTEM_PROMPT,
-        build_followup_prompt(row["raw_text"], get_profile_text()),
+        build_followup_prompt(row["raw_text"], get_profile_text(row["user_id"])),
         temperature=0.8,
     )
-    db.execute(
-        "UPDATE entries SET ai_followup=? WHERE id=?", (raw, entry_id)
-    )
+    db.execute("UPDATE entries SET ai_followup=? WHERE id=?", (raw, entry_id))
     return raw
 
 
 def submit_reflection(entry_id, text):
-    db.execute(
-        "UPDATE entries SET user_reflection=? WHERE id=?", (text, entry_id)
-    )
+    db.execute("UPDATE entries SET user_reflection=? WHERE id=?", (text, entry_id))
 
 
 def submit_outcome(entry_id, text):
     db.execute("UPDATE entries SET outcome=? WHERE id=?", (text, entry_id))
 
 
-def generate_scenario_question():
+def generate_scenario_question(user_id=None):
     """生成今日场景题并写入 scenario_questions(若已存在则跳过)。"""
+    uid = _uid(user_id)
     today = _today()
     exist = db.query_one(
         "SELECT id FROM scenario_questions WHERE user_id=? AND question_date=?",
-        (db.USER_ID, today),
+        (uid, today),
     )
     if exist:
         return
     raw = call_llm(
-        SYSTEM_PROMPT, build_scenario_prompt(get_profile_text()), temperature=0.9
+        SYSTEM_PROMPT, build_scenario_prompt(get_profile_text(uid)), temperature=0.9
     )
     db.execute(
         "INSERT INTO scenario_questions (user_id, question_text, question_date, answered, created_at) "
         "VALUES (?,?,?,0,?)",
-        (db.USER_ID, raw, today, _now()),
+        (uid, raw, today, _now()),
     )
 
 
-def get_today_scenario():
+def get_today_scenario(user_id=None):
+    uid = _uid(user_id)
     row = db.query_one(
         "SELECT * FROM scenario_questions WHERE user_id=? AND question_date=? ORDER BY id DESC LIMIT 1",
-        (db.USER_ID, _today()),
+        (uid, _today()),
     )
     if row:
         return row
-    # 按需即时生成(与定时任务一致)
-    generate_scenario_question()
+    generate_scenario_question(uid)
     return db.query_one(
         "SELECT * FROM scenario_questions WHERE user_id=? AND question_date=? ORDER BY id DESC LIMIT 1",
-        (db.USER_ID, _today()),
+        (uid, _today()),
     )
 
 
@@ -157,29 +157,31 @@ def mark_scenario_answered(scenario_id):
     db.execute("UPDATE scenario_questions SET answered=1 WHERE id=?", (scenario_id,))
 
 
-def generate_fallback_reminder():
+def generate_fallback_reminder(user_id=None):
+    uid = _uid(user_id)
     today = _today()
     has_entry = db.query_one(
         "SELECT id FROM entries WHERE user_id=? AND date(created_at)=?",
-        (db.USER_ID, today),
+        (uid, today),
     )
     has_reminder = db.query_one(
         "SELECT id FROM reminders WHERE user_id=? AND remind_type='fallback' AND date(created_at)=?",
-        (db.USER_ID, today),
+        (uid, today),
     )
     if has_entry or has_reminder:
         return
     db.execute(
         "INSERT INTO reminders (user_id, remind_type, title, content_text, is_read, created_at) "
         "VALUES (?, 'fallback', '今日训练提醒', '今天有没有哪个瞬间让你犹豫了一下?哪怕很小的事也可以记一笔。', 0, ?)",
-        (db.USER_ID, _now()),
+        (uid, _now()),
     )
 
 
-def get_unread_reminders():
+def get_unread_reminders(user_id=None):
+    uid = _uid(user_id)
     return db.query(
         "SELECT * FROM reminders WHERE user_id=? AND is_read=0 ORDER BY id DESC",
-        (db.USER_ID,),
+        (uid,),
     )
 
 
@@ -187,14 +189,15 @@ def mark_reminder_read(rid):
     db.execute("UPDATE reminders SET is_read=1 WHERE id=?", (rid,))
 
 
-def generate_weekly_summary():
+def generate_weekly_summary(user_id=None):
+    uid = _uid(user_id)
     today = date.today()
     monday = today - timedelta(days=today.weekday())
     sunday = monday + timedelta(days=6)
     week_start, week_end = monday.isoformat(), sunday.isoformat()
     rows = db.query(
         "SELECT * FROM entries WHERE user_id=? AND date(created_at) BETWEEN ? AND ? ORDER BY id",
-        (db.USER_ID, week_start, week_end),
+        (uid, week_start, week_end),
     )
     if not rows:
         return None
@@ -206,7 +209,7 @@ def generate_weekly_summary():
     )
     prev = db.query_one(
         "SELECT streak_weeks FROM weekly_summaries WHERE user_id=? ORDER BY id DESC LIMIT 1",
-        (db.USER_ID,),
+        (uid,),
     )
     streak = (prev["streak_weeks"] if prev else 0) + 1
     summary = call_llm(
@@ -215,6 +218,6 @@ def generate_weekly_summary():
     db.execute(
         "INSERT INTO weekly_summaries (user_id, week_start, week_end, summary_text, streak_weeks, created_at) "
         "VALUES (?,?,?,?,?,?)",
-        (db.USER_ID, week_start, week_end, summary, streak, _now()),
+        (uid, week_start, week_end, summary, streak, _now()),
     )
     return summary

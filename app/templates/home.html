@@ -48,6 +48,48 @@
   </div>
 </div>
 
+<!-- ============ 个人成长 ============ -->
+{% if is_guest %}
+<div class="reveal d1 panel" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin:1.5rem 0;background:var(--grad-soft);border-color:rgba(52,211,230,.3)">
+  <div>
+    <span class="meta">// 你的认知成长轨迹</span>
+    <p style="margin:.3rem 0 0;font-size:1.02rem">登录后可解锁 <b style="color:var(--accent)">等级 / 连续打卡 / 成就徽章</b>,并让所有训练数据随账号云端保存。</p>
+  </div>
+  <div style="display:flex;gap:.6rem">
+    <a class="btn primary" href="/register">免费注册</a>
+    <a class="btn ghost" href="/login">登录</a>
+  </div>
+</div>
+{% else %}
+<div class="reveal d1" style="display:grid;grid-template-columns:1.3fr 1fr;gap:1rem;margin:1.5rem 0">
+  <div class="panel" style="padding:1.2rem 1.4rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+      <span class="meta">认知成长 · Lv.{{ growth.level }}</span>
+      <span class="tag grad">{{ growth.xp }} XP</span>
+    </div>
+    <div style="height:9px;border-radius:6px;background:var(--line);overflow:hidden;margin-bottom:.5rem">
+      <i style="display:block;height:100%;width:{{ ((growth.progress / growth.need * 100)|round) }}%;background:var(--grad);border-radius:6px;transition:width .8s"></i>
+    </div>
+    <span class="muted" style="font-size:.8rem">距 Lv.{{ growth.level + 1 }} 还需 {{ growth.need - growth.progress }} XP</span>
+    {% if growth.badges %}
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.8rem">
+      {% for b in growth.badges %}<span class="tag jade">🏅 {{ b.name }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="panel" style="padding:1.1rem 1.2rem;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:var(--accent-2)">{{ growth.streak }}</div>
+      <div class="meta">连续打卡(天)</div>
+    </div>
+    <div class="panel" style="padding:1.1rem 1.2rem;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:var(--accent)">{% if rank %}#{{ rank }}{% else %}—{% endif %}</div>
+      <div class="meta">成长榜排名</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- ============ 能力维度 ============ -->
 <div class="sec reveal d2"><span class="no">01</span><h2>六大认知内核</h2><span class="line"></span></div>
 <div class="dim-grid reveal d2">
@@ -183,6 +225,40 @@
         <p class="muted" style="padding:1rem 0">今日要闻尚未抓取（每日 07:00 自动更新）。</p>
       {% endfor %}
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 社区预览 ============ -->
+<div class="sec reveal d6"><span class="no">08</span><h2>训练社区</h2><span class="line"></span></div>
+<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:1rem">
+  <div class="reveal d6">
+    <div class="panel" style="padding:0 1.2rem">
+      <div class="feed">
+      {% for p in recent_posts %}
+        <article class="feed-row">
+          <span class="meta">{{ p.module }}</span>
+          <div class="feed-main"><strong>{{ p.username }}</strong>
+            <p class="muted">{{ p.content }}</p></div>
+        </article>
+      {% else %}
+        <p class="muted" style="padding:1rem 0">还没有人发动态,{% if is_guest %}<a href="/register">注册</a>{% else %}去<a href="/community">社区</a>{% endif %}打个卡吧。</p>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="reveal d6">
+    <div class="sec" style="margin-top:0"><span class="no">★</span><h2>成长排行榜</h2><span class="line"></span></div>
+    <div class="panel" style="padding:1rem 1.2rem">
+      {% for b in board %}
+      <div style="display:flex;align-items:center;gap:.7rem;padding:.45rem 0;border-bottom:1px solid var(--line)">
+        <span class="meta" style="width:1.6rem">#{{ loop.index }}</span>
+        <span style="flex:1;font-size:.9rem">{{ b.username }}</span>
+        <span class="tag grad">Lv.{{ b.level }}</span>
+        <span class="meta">{{ b.xp }} XP</span>
+      </div>
+      {% endfor %}
+      <a class="btn line" href="/community" style="margin-top:.8rem;width:100%;text-align:center">进入社区 →</a>
     </div>
   </div>
 </div>

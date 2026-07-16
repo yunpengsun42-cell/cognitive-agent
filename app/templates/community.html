@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}训练社区 · 认知内核训练{% endblock %}
+{% block content %}
+<div class="sec reveal"><span class="no">◎</span><h2>训练社区</h2><span class="line"></span></div>
+
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1rem;align-items:start">
+  <!-- 左:发动态 + 动态流 -->
+  <div>
+    {% if is_guest %}
+    <div class="panel reveal" style="background:var(--grad-soft);border-color:rgba(52,211,230,.3);display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+      <span class="muted">登录后可在社区发打卡、点赞、评论。</span>
+      <div style="display:flex;gap:.5rem">
+        <a class="btn primary sm" href="/login">登录</a>
+        <a class="btn ghost sm" href="/register">注册</a>
+      </div>
+    </div>
+    {% else %}
+    <div class="panel reveal" style="margin-bottom:1rem">
+      <span class="meta">发一条训练打卡 / 感悟</span>
+      <textarea id="postText" rows="3" placeholder="今天练了什么?有什么觉察?(支持任意模块)" style="margin-top:.6rem"></textarea>
+      <div style="display:flex;gap:.6rem;align-items:center;margin-top:.5rem">
+        <select id="postModule">
+          <option value="打卡">打卡</option>
+          <option value="诊断">诊断</option>
+          <option value="场景推演">场景推演</option>
+          <option value="国学卡">国学卡</option>
+          <option value="周报">周报</option>
+          <option value="感悟">感悟</option>
+        </select>
+        <button class="btn primary sm" id="btnPost">发布 +15 XP</button>
+      </div>
+    </div>
+    {% endif %}
+
+    <div id="feed">
+    {% for p in posts %}
+      <article class="panel reveal" style="margin-bottom:.9rem" data-pid="{{ p.id }}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <span style="font-weight:600">{{ p.username }}</span>
+            <span class="tag accent">{{ p.module }}</span>
+          </div>
+          <span class="meta">{{ p.created_at[:10] }}</span>
+        </div>
+        <p style="margin:0 0 .6rem;line-height:1.7">{{ p.content }}</p>
+        <div style="display:flex;gap:.8rem;align-items:center">
+          <button class="likeBtn" data-pid="{{ p.id }}" style="background:none;border:none;cursor:pointer;color:{{ 'var(--jade)' if p.liked else 'var(--muted)' }};font-size:.85rem">
+            {{ '♥ 已赞' if p.liked else '♡ 赞' }} <b>{{ p.like_count }}</b>
+          </button>
+          <button class="cmtToggle" data-pid="{{ p.id }}" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem">💬 评论 <b>{{ p.comment_count }}</b></button>
+        </div>
+        <div class="cmtBox" data-pid="{{ p.id }}" style="display:none;margin-top:.7rem;border-top:1px solid var(--line);padding-top:.7rem">
+          {% for c in p.comments %}
+          <div style="font-size:.85rem;margin-bottom:.4rem"><b>{{ c.username }}</b> <span class="muted">{{ c.content }}</span></div>
+          {% endfor %}
+          {% if not is_guest %}
+          <div style="display:flex;gap:.5rem;margin-top:.4rem">
+            <input type="text" class="cmtInput" data-pid="{{ p.id }}" placeholder="写评论…" style="flex:1">
+            <button class="btn ghost sm cmtSend" data-pid="{{ p.id }}">发送</button>
+          </div>
+          {% endif %}
+        </div>
+      </article>
+    {% else %}
+      <div class="panel"><p class="muted">还没有动态,来发第一条打卡吧。</p></div>
+    {% endfor %}
+    </div>
+  </div>
+
+  <!-- 右:排行榜 -->
+  <div>
+    <div class="sec" style="margin-top:0"><span class="no">★</span><h2>成长排行榜</h2><span class="line"></span></div>
+    <div class="panel" style="padding:1rem 1.2rem">
+      {% for b in leaderboard %}
+      <div style="display:flex;align-items:center;gap:.7rem;padding:.5rem 0;border-bottom:1px solid var(--line)">
+        <span class="meta" style="width:1.8rem">#{{ loop.index }}</span>
+        <span style="flex:1;font-size:.92rem">{{ b.username }}{% if user and b.username==user.username %} <span class="tag grad">你</span>{% endif %}</span>
+        <span class="tag grad">Lv.{{ b.level }}</span>
+        <span class="meta">{{ b.xp }} XP</span>
+      </div>
+      {% else %}
+      <p class="muted">暂无排名,快去训练攒经验。</p>
+      {% endfor %}
+    </div>
+    {% if growth %}
+    <div class="panel reveal" style="margin-top:1rem;padding:1.1rem 1.3rem;display:flex;align-items:center;gap:.9rem">
+      <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:var(--accent)">Lv.{{ growth.level }}</div>
+      <div><div style="font-size:.9rem">你当前 {{ growth.xp }} XP · 连续 {{ growth.streak }} 天</div><div class="meta">MY STATUS</div></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1400);}
+{% if not is_guest %}
+document.getElementById('btnPost').onclick=function(){
+  var txt=document.getElementById('postText').value.trim();
+  if(!txt){toast('说点什么吧');return;}
+  var mod=document.getElementById('postModule').value;
+  fetch('/api/post',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({content:txt,module:mod})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.error){toast(d.error);setTimeout(function(){location.href='/login';},800);return;}
+      toast('已发布 🎉');location.reload();
+    }).catch(function(){toast('发布失败');});
+};
+{% endif %}
+document.querySelectorAll('.likeBtn').forEach(function(b){
+  b.onclick=function(){
+    var pid=b.getAttribute('data-pid');
+    fetch('/api/post/like',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:parseInt(pid)})})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.error){toast(d.error);return;}
+        b.innerHTML=(d.liked?'♥ 已赞':'♡ 赞')+' <b>'+d.count+'</b>';
+        b.style.color=d.liked?'var(--jade)':'var(--muted)';
+      });
+  };
+});
+document.querySelectorAll('.cmtToggle').forEach(function(b){
+  b.onclick=function(){
+    var pid=b.getAttribute('data-pid');
+    var box=document.querySelector('.cmtBox[data-pid="'+pid+'"]');
+    if(box) box.style.display = box.style.display==='none'?'block':'none';
+  };
+});
+document.querySelectorAll('.cmtSend').forEach(function(b){
+  b.onclick=function(){
+    var pid=b.getAttribute('data-pid');
+    var inp=document.querySelector('.cmtInput[data-pid="'+pid+'"]');
+    var txt=inp.value.trim();
+    if(!txt){toast('评论不能为空');return;}
+    fetch('/api/post/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:parseInt(pid),content:txt})})
+      .then(function(r){return r.json();}).then(function(d){ if(d.error){toast(d.error);return;} toast('评论成功'); location.reload(); });
+  };
+});
+</script>
+{% endblock %}

@@ -127,18 +127,18 @@
 <script>
 const ALL = {{ classics_json | safe }};
 const CATS = {{ categories | tojson }};
+const FAV_IDS = {{ fav_ids | tojson }};
+const IS_GUEST = {{ 'true' if is_guest else 'false' }};
 const CATEGORY_JI = {
   "道家":"强为","儒家":"放纵","兵家":"轻动","易理":"执固",
   "诗词":"喧扰","法家":"徇私","养生":"耗神"
 };
-const FAV_KEY = "fav_classics_v1";
-let favs = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
+let favs = new Set(FAV_IDS);
 let activeTab = "all";
 let current = null;
 
-function saveFavs(){ localStorage.setItem(FAV_KEY, JSON.stringify(favs)); }
 function scope(){
-  if(activeTab === "fav") return ALL.filter(c => favs.indexOf(c.code) >= 0);
+  if(activeTab === "fav") return ALL.filter(c => favs.has(c.id));
   if(activeTab === "all") return ALL;
   return ALL.filter(c => c.category === activeTab);
 }
@@ -155,7 +155,7 @@ function paint(c){
   document.getElementById('cYi').textContent = c.yi || "守中";
   document.getElementById('cJi').textContent = CATEGORY_JI[c.category] || "妄动";
   var bf = document.getElementById('btnFav');
-  if(favs.indexOf(c.code) >= 0){ bf.textContent="★ 已收藏"; bf.classList.add('fav-on'); }
+  if(favs.has(c.id)){ bf.textContent="★ 已收藏"; bf.classList.add('fav-on'); }
   else { bf.textContent="☆ 收藏"; bf.classList.remove('fav-on'); }
 }
 function reveal(c){
@@ -176,7 +176,7 @@ function todaySign(){
 }
 function renderTabs(){
   var box=document.getElementById('tabs'); box.innerHTML="";
-  var defs=[{k:"all",n:"全部",c:ALL.length},{k:"fav",n:"★ 收藏",c:favs.length,fav:true}];
+  var defs=[{k:"all",n:"全部",c:ALL.length},{k:"fav",n:"★ 收藏",c:favs.size,fav:true}];
   CATS.forEach(function(cat){ defs.push({k:cat,n:cat,c:ALL.filter(x=>x.category===cat).length}); });
   defs.forEach(function(d){
     var el=document.createElement('div');
@@ -192,7 +192,7 @@ function renderGrid(){
   if(!list.length){ g.innerHTML='<div class="empty">这里还没有卡片。</div>'; return; }
   list.forEach(function(c){
     var t=document.createElement('div');
-    t.className="tile"+(favs.indexOf(c.code)>=0?" faved":"");
+    t.className="tile"+(favs.has(c.id)?" faved":"");
     t.innerHTML='<div class="t-fav">★</div>'+
       '<div class="t-code">'+c.code+'</div>'+
       '<div class="t-ref">'+c.book+' · '+c.chapter+'</div>'+
@@ -211,15 +211,19 @@ document.getElementById('btnCopy').onclick=function(){
 };
 document.getElementById('btnFav').onclick=function(){
   if(!current) return;
-  var i=favs.indexOf(current.code);
-  if(i>=0){ favs.splice(i,1); toast("已取消收藏"); }
-  else { favs.push(current.code); toast("已收藏 "+current.code); }
-  saveFavs(); paint(current); renderTabs(); renderGrid();
-  document.getElementById('favN').textContent=favs.length;
+  if(IS_GUEST){ toast("请先登录后再收藏"); setTimeout(function(){location.href='/login';},900); return; }
+  fetch('/api/classics/fav',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({classic_id:current.id})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.fav){ favs.add(current.id); toast("已收藏 "+current.code); }
+      else { favs.delete(current.id); toast("已取消收藏"); }
+      paint(current); renderTabs(); renderGrid();
+      document.getElementById('favN').textContent=favs.size;
+    }).catch(function(){ toast("操作失败,请重试"); });
 };
 // init
 document.getElementById('totalN').textContent=ALL.length;
-document.getElementById('favN').textContent=favs.length;
+document.getElementById('favN').textContent=favs.size;
 renderTabs(); renderGrid();
 paint(todaySign());   // 载入即显示今日签(不翻面)
 </script>
