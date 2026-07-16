@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}道家卡 · 认知内核训练{% endblock %}
+{% block content %}
+<h2>道家智慧应用卡</h2>
+
+<form method="get" action="/daoist">
+<input name="scenario" placeholder="输入场景,如:焦虑催促 / 过度纠结 / 被否定">
+<button type="submit">匹配一张</button>
+</form>
+
+{% if card %}
+<article class="card">
+<h3>{{ card.core_idea }}</h3>
+<p class="muted">{{ card.source_ref }} · 适用:{{ card.applicable_scenario }}</p>
+</article>
+{% elif scenario %}
+<p class="muted">没有匹配到「{{ scenario }}」的卡片,试试:焦虑催促 / 过度纠结 / 被否定 / 想赢过对方</p>
+{% endif %}
+
+<h3>全部卡片</h3>
+{% for c in all_cards %}
+<article class="card">
+<p><strong>{{ c.core_idea }}</strong></p>
+<p class="muted">{{ c.source_ref }} · 适用:{{ c.applicable_scenario }}</p>
+</article>
+{% endfor %}
+{% endblock %}

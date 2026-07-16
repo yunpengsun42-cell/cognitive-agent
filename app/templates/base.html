@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}认知内核训练{% endblock %}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pico.css@1.5.10/css/pico.min.css">
+<style>
+body{max-width:720px;margin:auto;padding:1rem}
+nav a{margin-right:0.9rem;text-decoration:none;font-size:0.95rem}
+.card{border:1px solid #e3e3e3;border-radius:10px;padding:0.9rem;margin:0.7rem 0}
+.muted{color:#888;font-size:0.85rem}
+h2{margin-top:0.2rem}
+</style>
+</head>
+<body>
+<header>
+<nav>
+<a href="/">首页</a>
+<a href="/diagnosis">诊断</a>
+<a href="/practice">练习</a>
+<a href="/report">周报</a>
+<a href="/daoist">道家卡</a>
+</nav>
+<hr>
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

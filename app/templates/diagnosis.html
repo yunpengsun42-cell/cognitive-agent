@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}诊断 · 认知内核训练{% endblock %}
+{% block content %}
+<h2>认知内核诊断</h2>
+
+{% if profile %}
+<article class="card">
+<h3>你的诊断画像</h3>
+<p><strong>决策风格:</strong>{{ profile.decision_style or '—' }}</p>
+<p><strong>情绪敏感源:</strong>{{ profile.emotion_trigger or '—' }}</p>
+<p><strong>抗压恢复速度:</strong>{{ profile.recovery_speed or '—' }}</p>
+<p><strong>认知偏差倾向:</strong>{{ profile.bias_tendency or '—' }}</p>
+<p>{{ profile.summary_text or '' }}</p>
+</article>
+<p><a href="/">回到首页开始每日训练 →</a></p>
+{% else %}
+<p class="muted">12 道题,凭直觉答,不用想太久。AI 只在全部答完后统一生成画像,过程中不评判你。</p>
+<form method="post" action="/diagnosis/submit">
+{% for q in questions %}
+<label><strong>{{ loop.index }}. {{ q }}</strong></label>
+<textarea name="q{{ loop.index0 }}" rows="2"></textarea>
+{% endfor %}
+<button type="submit">生成我的画像</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}首页 · 认知内核训练{% endblock %}
+{% block content %}
+<h2>今日训练</h2>
+<p class="muted">连续记录 <strong>{{ streak }}</strong> 周</p>
+
+{% if not has_profile %}
+<article class="card"><strong>还没做诊断</strong><br>
+<a href="/diagnosis">先花5分钟完成12题诊断 →</a></article>
+{% endif %}
+
+{% if scenario %}
+<article class="card">
+<h3>今日场景推演</h3>
+<p>{{ scenario.question_text }}</p>
+<form method="post" action="/scenario/answer">
+<textarea name="raw_text" rows="3" placeholder="写下你的判断 / 做法…"></textarea>
+<input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+<button type="submit">提交作答</button>
+</form>
+</article>
+{% endif %}
+
+{% for r in reminders %}
+<article class="card">
+<h3>{{ r.title }}</h3>
+<p>{{ r.content_text }}</p>
+<form method="post" action="/reminders/{{ r.id }}/read">
+<button type="submit">知道了</button>
+</form>
+</article>
+{% endfor %}
+
+{% if training %}
+<article class="card">
+<h3>训练精选 · {{ training.title }}</h3>
+<p class="muted">{{ training.summary }}</p>
+<p><strong>教练追问:</strong>{{ training.ai_question }}</p>
+</article>
+{% endif %}
+
+<h3>今日要闻</h3>
+{% for n in news %}
+<article class="card">
+<strong>{{ n.title }}</strong> <span class="muted">[{{ n.category }}]</span>
+<p class="muted">{{ n.summary }}</p>
+</article>
+{% else %}
+<p class="muted">今日要闻尚未抓取(每日 07:00 自动更新)。</p>
+{% endfor %}
+
+<h3>记一笔</h3>
+<form method="post" action="/practice/new">
+<select name="entry_type">
+<option value="decision">决策</option>
+<option value="emotion">情绪</option>
+<option value="news_reflection">新闻反思</option>
+<option value="daoist_practice">道家实践</option>
+</select>
+<textarea name="raw_text" rows="3" placeholder="刚才发生了什么?你的念头 / 选择?"></textarea>
+<button type="submit">保存</button>
+</form>
+{% endblock %}

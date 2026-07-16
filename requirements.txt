@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+apscheduler
+feedparser
+requests
+python-dotenv
+jinja2
