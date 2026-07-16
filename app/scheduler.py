@@ -27,4 +27,9 @@ def start():
         CronTrigger(day_of_week=6, hour=20, minute=0, timezone="Asia/Shanghai"),
         id="weekly",
     )
+    scheduler.add_job(
+        tasks.backup_db,
+        CronTrigger(hour=3, minute=0, timezone="Asia/Shanghai"),
+        id="backup",
+    )
     scheduler.start()

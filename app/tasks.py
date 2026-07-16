@@ -1,5 +1,7 @@
 import os
 import re
+import sqlite3
+import glob
 from datetime import datetime, date
 
 import feedparser
@@ -101,3 +103,24 @@ def fallback_job():
 
 def weekly_job():
     services.generate_weekly_summary()
+
+
+def backup_db():
+    """每日快照 SQLite 到 data/backups/,保留最近30个,防止容器重建丢数据。"""
+    backup_dir = db.DATA_DIR / "backups"
+    backup_dir.mkdir(exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d")
+    dst = backup_dir / f"app_{ts}.db"
+    src = sqlite3.connect(str(db.DB_PATH))
+    dst_conn = sqlite3.connect(str(dst))
+    src.backup(dst_conn)  # 在线热备,避免写入中复制损坏
+    src.close()
+    dst_conn.close()
+    # 保留最近 30 个快照
+    files = sorted(glob.glob(str(backup_dir / "app_*.db")), reverse=True)
+    for old in files[30:]:
+        try:
+            os.remove(old)
+        except OSError:
+            pass
+    return str(dst)
