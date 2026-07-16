@@ -1,31 +1,114 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}认知内核训练{% endblock %}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pico.css@1.5.10/css/pico.min.css">
 <style>
-body{max-width:720px;margin:auto;padding:1rem}
-nav a{margin-right:0.9rem;text-decoration:none;font-size:0.95rem}
-.card{border:1px solid #e3e3e3;border-radius:10px;padding:0.9rem;margin:0.7rem 0}
-.muted{color:#888;font-size:0.85rem}
-h2{margin-top:0.2rem}
+:root{
+  --ink:#23202b;
+  --paper:#f6f3ec;
+  --paper-2:#ffffff;
+  --accent:#b5443a;
+  --accent-soft:#c75a4d;
+  --jade:#3f6f5e;
+  --muted:#8a8478;
+  --line:#e7e1d6;
+  --shadow:0 6px 24px rgba(35,32,43,.08);
+  --radius:16px;
+  --pico-background-color:var(--paper);
+  --pico-card-background-color:var(--paper-2);
+  --pico-primary:var(--accent);
+  --pico-primary-hover:var(--accent-soft);
+  --pico-muted-color:var(--muted);
+  --pico-border-color:var(--line);
+  --pico-border-radius:var(--radius);
+  --pico-font-family:'PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  max-width:760px;margin:0 auto;padding:0 1rem 4rem;
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 400px at 50% -200px, rgba(181,68,58,.06), transparent),
+    var(--paper);
+  font-size:16px;line-height:1.7;
+  animation:fade .5s ease both;
+}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.brand{
+  position:sticky;top:0;z-index:10;
+  margin:0 -1rem 1.4rem;padding:1rem 1rem .9rem;
+  background:rgba(246,243,236,.82);
+  backdrop-filter:saturate(180%) blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.brand h1{font-size:1.25rem;margin:0;letter-spacing:.06em;font-weight:800}
+.brand h1 .dot{color:var(--accent)}
+.brand .sub{font-size:.78rem;color:var(--muted);margin:.12rem 0 0;letter-spacing:.04em}
+.nav{display:flex;gap:.4rem;margin-top:.7rem;flex-wrap:wrap}
+.nav a{
+  text-decoration:none;color:var(--ink);
+  font-size:.86rem;padding:.34rem .85rem;border-radius:999px;
+  border:1px solid transparent;transition:.2s;
+}
+.nav a:hover{background:rgba(181,68,58,.07)}
+.nav a.active{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(181,68,58,.3)}
+h2{font-size:1.35rem;letter-spacing:.04em;margin:1.6rem 0 .6rem;display:flex;align-items:center;gap:.5rem}
+h2::before{content:"";width:4px;height:1.1em;background:var(--accent);border-radius:2px;display:inline-block}
+h3{font-size:1.05rem;margin:.2rem 0 .5rem;color:var(--ink)}
+.card{
+  background:var(--paper-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:1.1rem 1.2rem;
+  margin:.8rem 0;
+  box-shadow:var(--shadow);
+  transition:transform .2s, box-shadow .2s;
+}
+.card:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(35,32,43,.12)}
+.card.scene{border-left:4px solid var(--accent)}
+.card.reminder{border-left:4px solid var(--jade)}
+.card.profile{border-left:4px solid var(--accent)}
+.muted{color:var(--muted);font-size:.85rem}
+textarea,input,select{border-radius:12px !important;border:1px solid var(--line) !important;background:#fff !important}
+textarea:focus,input:focus,select:focus{border-color:var(--accent) !important;box-shadow:0 0 0 3px rgba(181,68,58,.15) !important}
+button,.btn{border-radius:999px !important;font-weight:600 !important;padding:.5rem 1.3rem !important;transition:.2s;cursor:pointer}
+button:hover{transform:translateY(-1px)}
+a{color:var(--accent)}
+.tag{display:inline-block;font-size:.72rem;padding:.1rem .55rem;border-radius:999px;background:rgba(63,111,94,.12);color:var(--jade);margin-left:.4rem}
+footer{margin-top:2.6rem;text-align:center;color:var(--muted);font-size:.75rem}
+@media (max-width:560px){
+  .brand h1{font-size:1.1rem}
+  .nav a{padding:.3rem .65rem;font-size:.8rem}
+}
 </style>
 </head>
 <body>
-<header>
-<nav>
-<a href="/">首页</a>
-<a href="/diagnosis">诊断</a>
-<a href="/practice">练习</a>
-<a href="/report">周报</a>
-<a href="/daoist">道家卡</a>
-</nav>
-<hr>
+<header class="brand">
+  <h1>认知内核<span class="dot">·</span>训练</h1>
+  <p class="sub">看清你的念头，重写你的选择</p>
+  <nav class="nav">
+    <a href="/" data-path="/">首页</a>
+    <a href="/diagnosis" data-path="/diagnosis">诊断</a>
+    <a href="/practice" data-path="/practice">练习</a>
+    <a href="/report" data-path="/report">周报</a>
+    <a href="/daoist" data-path="/daoist">道家卡</a>
+  </nav>
 </header>
 <main>
 {% block content %}{% endblock %}
 </main>
+<footer>认知内核训练 · AI 陪练基于 GLM-4-Flash · 数据留存于本地</footer>
+<script>
+  (function(){
+    var p=location.pathname;
+    document.querySelectorAll('.nav a').forEach(function(a){
+      var d=a.getAttribute('data-path');
+      if(d==='/'? p==='/': p.indexOf(d)===0) a.classList.add('active');
+    });
+  })();
+</script>
 </body>
 </html>

@@ -10,7 +10,7 @@
 {% endif %}
 
 {% if scenario %}
-<article class="card">
+<article class="card scene">
 <h3>今日场景推演</h3>
 <p>{{ scenario.question_text }}</p>
 <form method="post" action="/scenario/answer">
@@ -22,7 +22,7 @@
 {% endif %}
 
 {% for r in reminders %}
-<article class="card">
+<article class="card reminder">
 <h3>{{ r.title }}</h3>
 <p>{{ r.content_text }}</p>
 <form method="post" action="/reminders/{{ r.id }}/read">
@@ -42,7 +42,7 @@
 <h3>今日要闻</h3>
 {% for n in news %}
 <article class="card">
-<strong>{{ n.title }}</strong> <span class="muted">[{{ n.category }}]</span>
+<strong>{{ n.title }}</strong> <span class="tag">{{ n.category }}</span>
 <p class="muted">{{ n.summary }}</p>
 </article>
 {% else %}
