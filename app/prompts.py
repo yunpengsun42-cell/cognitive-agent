@@ -55,7 +55,13 @@ def build_profile_prompt(qa_pairs):
         '  "emotion_trigger": "情绪敏感源描述",\n'
         '  "recovery_speed": "抗压恢复速度描述",\n'
         '  "bias_tendency": "典型认知偏差倾向,逗号分隔",\n'
-        '  "summary_text": "一段完整的画像描述"\n'
+        '  "summary_text": "一段完整的画像描述",\n'
+        '  "attention": 0-100 注意力评分(当前相对基线,真实反映强弱不讨好),\n'
+        '  "memory": 0-100 记忆力评分,\n'
+        '  "reasoning": 0-100 逻辑评分,\n'
+        '  "executive": 0-100 执行功能评分,\n'
+        '  "metacog": 0-100 元认知评分,\n'
+        '  "regulation": 0-100 情绪调节评分\n'
         "}\n\n"
         f"问卷回答:\n{qa_text}"
     )
@@ -94,4 +100,18 @@ def build_training_question_prompt(news_summary):
         "基于下面这条新闻摘要,生成一道让用户结合自己决策/判断来思考的追问。"
         "要能牵引到他自身的认知或行为,不要讨论新闻本身。只问一个问题,30 字以内。\n\n"
         f"新闻:{news_summary}"
+    )
+
+
+def build_scenario_analysis_prompt(question, answer, profile_text):
+    return (
+        "用户刚完成一道场景推演题,提交了作答。请作为认知教练给出结构化复盘。\n"
+        "严格只输出如下 JSON(不要多余文字、不要代码块标记):\n"
+        "{\n"
+        '  "commentary": "针对他刚才作答里具体某一句话/某个判断的点评,指出亮点或盲点(2-3 句)",\n'
+        '  "reference": "一个更优的思考框架或参考思路(2-3 句)",\n'
+        '  "suggestion": "他接下来可以刻意练习的一件具体小事(1-2 句)"\n'
+        "}\n\n"
+        f"用户画像:\n{profile_text}\n\n"
+        f"场景题:\n{question}\n\n用户作答:\n{answer}"
     )

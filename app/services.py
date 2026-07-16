@@ -10,6 +10,7 @@ from .prompts import (
     build_followup_prompt,
     build_weekly_prompt,
     build_training_question_prompt,
+    build_scenario_analysis_prompt,
 )
 
 
@@ -59,8 +60,10 @@ def submit_diagnosis(answers, user_id=None):
     db.execute("DELETE FROM diagnosis_profile WHERE user_id=?", (uid,))
     db.execute(
         "INSERT INTO diagnosis_profile "
-        "(user_id, decision_style, emotion_trigger, recovery_speed, bias_tendency, summary_text, version, created_at) "
-        "VALUES (?,?,?,?,?,?,1,?)",
+        "(user_id, decision_style, emotion_trigger, recovery_speed, bias_tendency, summary_text, "
+        "score_attention, score_memory, score_reasoning, score_executive, score_metacog, score_regulation, "
+        "version, created_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?)",
         (
             uid,
             prof.get("decision_style"),
@@ -68,10 +71,25 @@ def submit_diagnosis(answers, user_id=None):
             prof.get("recovery_speed"),
             prof.get("bias_tendency"),
             prof.get("summary_text"),
+            _to_score(prof.get("attention")),
+            _to_score(prof.get("memory")),
+            _to_score(prof.get("reasoning")),
+            _to_score(prof.get("executive")),
+            _to_score(prof.get("metacog")),
+            _to_score(prof.get("regulation")),
             _now(),
         ),
     )
     return prof
+
+
+def _to_score(v):
+    """把 LLM 返回的评分安全地转成 1-100 整数,异常时 None。"""
+    try:
+        v = int(float(v))
+        return max(1, min(100, v))
+    except (TypeError, ValueError):
+        return None
 
 
 def _parse_profile(raw):
@@ -85,6 +103,27 @@ def _parse_profile(raw):
     except Exception:
         return {"summary_text": raw, "decision_style": "", "emotion_trigger": "",
                 "recovery_speed": "", "bias_tendency": ""}
+
+
+def get_profile_scores(user_id=None) -> dict:
+    """读取最新诊断的六维分数,未诊断返回 None。"""
+    uid = _uid(user_id)
+    row = db.query_one(
+        "SELECT score_attention, score_memory, score_reasoning, score_executive, "
+        "score_metacog, score_regulation FROM diagnosis_profile "
+        "WHERE user_id=? ORDER BY id DESC LIMIT 1",
+        (uid,),
+    )
+    if not row or row["score_attention"] is None:
+        return None
+    return {
+        "attention": row["score_attention"],
+        "memory": row["score_memory"],
+        "reasoning": row["score_reasoning"],
+        "executive": row["score_executive"],
+        "metacog": row["score_metacog"],
+        "regulation": row["score_regulation"],
+    }
 
 
 def create_entry(entry_type, raw_text, source_ref=None, user_id=None):
@@ -155,6 +194,54 @@ def get_today_scenario(user_id=None):
 
 def mark_scenario_answered(scenario_id):
     db.execute("UPDATE scenario_questions SET answered=1 WHERE id=?", (scenario_id,))
+
+
+def get_scenario(scenario_id):
+    row = db.query_one("SELECT * FROM scenario_questions WHERE id=?", (scenario_id,))
+    return dict(row) if row else None
+
+
+def generate_scenario_analysis(scenario_id):
+    """根据场景题与用户作答,生成结构化复盘(思路点评/参考思路/改进建议)并入库。"""
+    row = get_scenario(scenario_id)
+    if not row or not row.get("answer_text"):
+        return None
+    raw = call_llm(
+        SYSTEM_PROMPT,
+        build_scenario_analysis_prompt(
+            row["question_text"], row["answer_text"], get_profile_text(row["user_id"])
+        ),
+        temperature=0.7,
+    )
+    analysis = _parse_analysis(raw)
+    db.execute(
+        "UPDATE scenario_questions SET analysis_text=? WHERE id=?",
+        (json.dumps(analysis, ensure_ascii=False), scenario_id),
+    )
+    return analysis
+
+
+def _parse_analysis(raw):
+    try:
+        txt = raw.strip()
+        if txt.startswith("```"):
+            txt = txt.split("```", 2)[1]
+            if txt.startswith("json"):
+                txt = txt[4:]
+        data = json.loads(txt)
+
+        def _s(v):
+            if isinstance(v, list):
+                return "；".join(str(x).strip() for x in v if str(x).strip())
+            return (v or "").strip()
+
+        return {
+            "commentary": _s(data.get("commentary")),
+            "reference": _s(data.get("reference")),
+            "suggestion": _s(data.get("suggestion")),
+        }
+    except Exception:
+        return {"commentary": raw.strip(), "reference": "", "suggestion": ""}
 
 
 def generate_fallback_reminder(user_id=None):

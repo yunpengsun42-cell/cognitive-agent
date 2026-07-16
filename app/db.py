@@ -27,6 +27,12 @@ CREATE TABLE IF NOT EXISTS diagnosis_profile (
     recovery_speed TEXT,
     bias_tendency TEXT,
     summary_text TEXT,
+    score_attention INTEGER,
+    score_memory INTEGER,
+    score_reasoning INTEGER,
+    score_executive INTEGER,
+    score_metacog INTEGER,
+    score_regulation INTEGER,
     version INTEGER DEFAULT 1,
     created_at TEXT NOT NULL
 );
@@ -92,6 +98,8 @@ CREATE TABLE IF NOT EXISTS scenario_questions (
     question_text TEXT NOT NULL,
     question_date TEXT NOT NULL,
     answered INTEGER DEFAULT 0,
+    answer_text TEXT,
+    analysis_text TEXT,
     created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS reminders (
@@ -183,6 +191,18 @@ def init_db():
     pcols = [r[1] for r in conn.execute("PRAGMA table_info(posts)")]
     if "image_url" not in pcols:
         conn.execute("ALTER TABLE posts ADD COLUMN image_url TEXT")
+    # 迁移:diagnosis_profile 可能没有 6 个 score 列
+    dcols = [r[1] for r in conn.execute("PRAGMA table_info(diagnosis_profile)")]
+    for sc in ("score_attention", "score_memory", "score_reasoning",
+               "score_executive", "score_metacog", "score_regulation"):
+        if sc not in dcols:
+            conn.execute(f"ALTER TABLE diagnosis_profile ADD COLUMN {sc} INTEGER")
+    # 迁移:scenario_questions 可能没有 answer_text / analysis_text 列
+    scols = [r[1] for r in conn.execute("PRAGMA table_info(scenario_questions)")]
+    if "answer_text" not in scols:
+        conn.execute("ALTER TABLE scenario_questions ADD COLUMN answer_text TEXT")
+    if "analysis_text" not in scols:
+        conn.execute("ALTER TABLE scenario_questions ADD COLUMN analysis_text TEXT")
     conn.commit()
     cur = conn.execute("SELECT id FROM users LIMIT 1")
     if cur.fetchone() is None:

@@ -14,6 +14,30 @@ from .scheduler import start as start_scheduler
 from .prompts import DIAGNOSIS_QUESTIONS
 from .classics_data import CATEGORY_ORDER
 
+# 六大认知内核维度定义(顺序即雷达图顺序)
+DIM_DEFS = [
+    ("attention", "ATTENTION", "注意力",
+     "聚焦目标、过滤干扰,在前额叶调控下维持稳定专注。", "舒尔特方格 · 单任务聚焦"),
+    ("memory", "MEMORY", "记忆力",
+     "编码、巩固与提取,工作记忆是你的实时心智工作台。", "间隔重复 · 工作记忆 N-back"),
+    ("reasoning", "REASONING", "逻辑",
+     "推演、归纳与判断,在不确定中形成可靠结论。", "每日一道推演题 · 写清论据"),
+    ("executive", "EXECUTIVE", "执行功能",
+     "计划、抑制与灵活切换,把意图落成有序行动。", "番茄钟 · 任务拆到可执行"),
+    ("metacog", "METACOG", "元认知",
+     "对思考的思考——觉察偏差、调控策略、校准判断。", "记一笔 + 追问 · 复盘偏差"),
+    ("regulation", "REGULATION", "情绪调节",
+     "在波动中稳住定力,让决策不被情绪劫持。", "呼吸锚定 · 情绪日志"),
+]
+DIM_ICONS = {
+    "attention": '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/>',
+    "memory": '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>',
+    "reasoning": '<circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 7l3 9M16 7l-3 9"/>',
+    "executive": '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/>',
+    "metacog": '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+    "regulation": '<path d="M3 13c2.5 0 2.5-4 5-4s2.5 4 5 4 2.5-4 5-4 2.5 4 5 4"/><path d="M3 18c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3"/>',
+}
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 UPLOAD_DIR = BASE_DIR / "data" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -64,6 +88,13 @@ def home(request: Request):
     uid = uid_of(request)
     c = ctx(request)
     scenario = services.get_today_scenario(uid)
+    if scenario:
+        scenario = dict(scenario)
+        if scenario.get("answered") and scenario.get("analysis_text"):
+            try:
+                scenario["analysis"] = json.loads(scenario["analysis_text"])
+            except Exception:
+                scenario["analysis"] = None
     news = db.query("SELECT * FROM daily_news ORDER BY id DESC LIMIT 5")
     training = db.query_one("SELECT * FROM training_news ORDER BY id DESC")
     reminders = services.get_unread_reminders(uid)
@@ -87,6 +118,21 @@ def home(request: Request):
         "JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 4"
     )
     board = growth.leaderboard(5)
+    # A: 用真实诊断分数构造雷达与六维卡,未诊断用基线 50
+    scores = services.get_profile_scores(uid)
+    has_scores = scores is not None
+    dimensions = []
+    radar = []
+    weakest_key = None
+    if scores:
+        weakest_key = min(scores, key=scores.get)
+    for key, en, name, desc, reco in DIM_DEFS:
+        w = scores[key] if scores else 50
+        dimensions.append({
+            "key": key, "en": en, "name": name, "desc": desc,
+            "reco": reco, "score": w, "icon": DIM_ICONS[key],
+        })
+        radar.append({"k": name, "w": w})
     c.update({
         "scenario": scenario,
         "news": news,
@@ -99,6 +145,10 @@ def home(request: Request):
         "rank": rank,
         "recent_posts": recent_posts,
         "board": board,
+        "radar_scores": json.dumps(radar, ensure_ascii=False),
+        "dimensions": dimensions,
+        "weakest_key": weakest_key,
+        "has_scores": has_scores,
     })
     return templates.TemplateResponse("home.html", c)
 
@@ -114,6 +164,8 @@ def scenario_answer(request: Request, raw_text: str = Form(...), scenario_id: in
     uid = uid_of(request)
     services.create_entry("scenario_drill", raw_text, user_id=uid)
     services.mark_scenario_answered(scenario_id)
+    db.execute("UPDATE scenario_questions SET answer_text=? WHERE id=?", (raw_text, scenario_id))
+    services.generate_scenario_analysis(scenario_id)
     if uid != db.USER_ID:
         growth.award_xp(uid, growth.XP_ENTRY, "entry", {"scenario_id": scenario_id})
     return RedirectResponse("/", status_code=303)

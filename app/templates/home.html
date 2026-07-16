@@ -21,13 +21,13 @@
   <aside class="panel" style="padding:1.3rem">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
       <span class="meta">认知内核图谱</span>
-      <span class="tag grad">示意基线</span>
+      {% if has_scores %}<span class="tag grad">我的图谱</span>{% else %}<span class="tag grad">示意基线</span>{% endif %}
     </div>
     <div class="radar-wrap">
       <svg id="radar" viewBox="0 0 340 340" role="img" aria-label="认知内核六维雷达图"></svg>
     </div>
     <p class="muted" style="font-size:.8rem;margin:.4rem 0 0;text-align:center">
-      完成 12 题诊断，解锁你的专属内核图谱与短板分析。
+      {% if has_scores %}基于你的诊断画像生成，重测或训练会持续更新。{% else %}完成 12 题诊断，解锁你的专属内核图谱与短板分析。{% endif %}
     </p>
   </aside>
 </section>
@@ -93,48 +93,17 @@
 <!-- ============ 能力维度 ============ -->
 <div class="sec reveal d2"><span class="no">01</span><h2>六大认知内核</h2><span class="line"></span></div>
 <div class="dim-grid reveal d2">
+  {% for d in dimensions %}
   <a class="dim" href="/diagnosis">
-    <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/></svg></div>
-    <div class="en">ATTENTION</div>
-    <h3>注意力</h3>
-    <p>聚焦目标、过滤干扰，在前额叶调控下维持稳定专注。</p>
-    <div class="bar"><i style="--w:62%"></i></div><span class="pct">62%</span>
+    <div class="ico"><svg viewBox="0 0 24 24">{{ d.icon | safe }}</svg></div>
+    <div class="en">{{ d.en }}</div>
+    <h3>{{ d.name }}{% if has_scores and d.key == weakest_key %}<span class="tag danger sm">短板</span>{% endif %}</h3>
+    <p>{{ d.desc }}</p>
+    <div class="bar"><i style="--w:{{ d.score }}%"></i></div>
+    <span class="pct">{% if has_scores %}{{ d.score }}%{% else %}—{% endif %}</span>
+    <span class="reco">推荐 · {{ d.reco }}</span>
   </a>
-  <a class="dim" href="/diagnosis">
-    <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
-    <div class="en">MEMORY</div>
-    <h3>记忆力</h3>
-    <p>编码、巩固与提取，工作记忆是你的实时心智工作台。</p>
-    <div class="bar"><i style="--w:48%"></i></div><span class="pct">48%</span>
-  </a>
-  <a class="dim" href="/diagnosis">
-    <div class="ico"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 7l3 9M16 7l-3 9"/></svg></div>
-    <div class="en">REASONING</div>
-    <h3>逻辑</h3>
-    <p>推演、归纳与判断，在不确定中形成可靠结论。</p>
-    <div class="bar"><i style="--w:71%"></i></div><span class="pct">71%</span>
-  </a>
-  <a class="dim" href="/diagnosis">
-    <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg></div>
-    <div class="en">EXECUTIVE</div>
-    <h3>执行功能</h3>
-    <p>计划、抑制与灵活切换，把意图落成有序行动。</p>
-    <div class="bar"><i style="--w:55%"></i></div><span class="pct">55%</span>
-  </a>
-  <a class="dim" href="/diagnosis">
-    <div class="ico"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
-    <div class="en">METACOG</div>
-    <h3>元认知</h3>
-    <p>对思考的思考——觉察偏差、调控策略、校准判断。</p>
-    <div class="bar"><i style="--w:44%"></i></div><span class="pct">44%</span>
-  </a>
-  <a class="dim" href="/diagnosis">
-    <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 13c2.5 0 2.5-4 5-4s2.5 4 5 4 2.5-4 5-4 2.5 4 5 4"/><path d="M3 18c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3"/></svg></div>
-    <div class="en">REGULATION</div>
-    <h3>情绪调节</h3>
-    <p>在波动中稳住定力，让决策不被情绪劫持。</p>
-    <div class="bar"><i style="--w:66%"></i></div><span class="pct">66%</span>
-  </a>
+  {% endfor %}
 </div>
 
 <!-- ============ 训练路径 ============ -->
@@ -166,7 +135,7 @@
     {% if not has_profile %}
     <article class="panel"><strong>还没有诊断画像</strong><br>
     <a href="/diagnosis">先花 5 分钟完成 12 题诊断，推演题才会贴合你 →</a></article>
-    {% elif scenario %}
+    {% elif scenario and not scenario.answered %}
     <article class="panel scene">
       <span class="meta">SCENARIO · {{ scenario.question_date }}</span>
       <h3 style="margin:.5rem 0;font-size:1.1rem">{{ scenario.question_text }}</h3>
@@ -175,6 +144,23 @@
         <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
         <button type="submit" class="btn primary">提交作答</button>
       </form>
+    </article>
+    {% elif scenario and scenario.answered %}
+    <article class="panel scene">
+      <span class="meta">SCENARIO · {{ scenario.question_date }} · 已作答</span>
+      <h3 style="margin:.5rem 0;font-size:1.1rem">{{ scenario.question_text }}</h3>
+      <div class="ans">
+        <span class="meta">你的作答</span>
+        <p>{{ scenario.answer_text }}</p>
+      </div>
+      {% if scenario.analysis %}
+      <div class="analysis">
+        {% if scenario.analysis.commentary %}<div><span class="tag accent">思路点评</span><p>{{ scenario.analysis.commentary }}</p></div>{% endif %}
+        {% if scenario.analysis.reference %}<div><span class="tag jade">参考思路</span><p>{{ scenario.analysis.reference }}</p></div>{% endif %}
+        {% if scenario.analysis.suggestion %}<div><span class="tag grad">改进建议</span><p>{{ scenario.analysis.suggestion }}</p></div>{% endif %}
+      </div>
+      {% endif %}
+      <a class="btn line" href="/practice" style="margin-top:.6rem">查看训练记录 →</a>
     </article>
     {% else %}
     <article class="panel"><span class="muted">今日推演题尚未生成（每日首次访问自动生成）。<a href="/">刷新一下</a>。</span></article>
@@ -299,10 +285,11 @@ const CATEGORY_JI = {
 
 // 雷达图
 (function(){
-  var DIMS=[
-    {k:"注意",w:62},{k:"记忆",w:48},{k:"逻辑",w:71},
-    {k:"执行",w:55},{k:"元认知",w:44},{k:"心稳",w:66}
-  ];
+  var DIMS = {{ radar_scores | safe }};
+  if(!DIMS || !DIMS.length){ DIMS=[
+    {k:"注意",w:50},{k:"记忆",w:50},{k:"逻辑",w:50},
+    {k:"执行",w:50},{k:"元认知",w:50},{k:"心稳",w:50}
+  ]; }
   var cx=170,cy=170,R=120,n=DIMS.length;
   var ang=function(i){return (-90+i*360/n)*Math.PI/180;};
   var grid="",axes="",labels="",pts="",dots="";

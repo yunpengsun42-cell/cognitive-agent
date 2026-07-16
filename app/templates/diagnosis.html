@@ -11,8 +11,29 @@
 <p><strong>抗压恢复速度:</strong>{{ profile.recovery_speed or '—' }}</p>
 <p><strong>认知偏差倾向:</strong>{{ profile.bias_tendency or '—' }}</p>
 <p>{{ profile.summary_text or '' }}</p>
+{% set scores = [
+  ("注意力", profile.score_attention),
+  ("记忆力", profile.score_memory),
+  ("逻辑", profile.score_reasoning),
+  ("执行功能", profile.score_executive),
+  ("元认知", profile.score_metacog),
+  ("情绪调节", profile.score_regulation)
+] %}
+{% if profile.score_attention is not none %}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-top:1rem">
+  {% for name, val in scores %}
+  <div style="background:var(--bg-3);border:1px solid var(--line-2);border-radius:10px;padding:.6rem .7rem">
+    <div class="meta" style="font-size:.74rem">{{ name }}</div>
+    <div style="font-family:var(--mono);font-size:1.25rem;font-weight:800;color:var(--accent)">{{ val }}<span style="font-size:.7rem;color:var(--muted)">/100</span></div>
+    <div style="height:4px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:.3rem">
+      <i style="display:block;height:100%;width:{{ val }}%;background:var(--grad)"></i>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 </article>
-<p><a href="/">回到首页开始每日训练 →</a></p>
+<p><a href="/">回到首页看你的内核图谱 →</a></p>
 {% else %}
 <p class="muted">12 道题,凭直觉答,不用想太久。AI 只在全部答完后统一生成画像,过程中不评判你。</p>
 <form method="post" action="/diagnosis/submit">
