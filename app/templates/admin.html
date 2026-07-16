@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}管理台 · 认知内核训练{% endblock %}
+{% block content %}
+<style>
+.admin-wrap{max-width:1100px;margin:0 auto}
+.admin-wrap h2{font-size:1.5rem;margin:0 0 .2rem}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin:1.2rem 0}
+.stat-card{padding:1.2rem 1.2rem 1rem;text-align:center}
+.stat-card .n{font-family:var(--mono);font-size:2.1rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat-card .l{font-size:.82rem;color:var(--muted);margin-top:.2rem}
+.user-table{width:100%;border-collapse:collapse;font-size:.88rem}
+.user-table th,.user-table td{padding:.75rem .7rem;text-align:left;border-bottom:1px solid var(--line)}
+.user-table th{font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;font-weight:700}
+.user-table tr:last-child td{border-bottom:none}
+.user-table td .mono{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+.badge-pill{display:inline-block;font-family:var(--mono);font-size:.68rem;padding:.15rem .5rem;border-radius:999px;background:rgba(52,211,230,.1);color:var(--accent);border:1px solid rgba(52,211,230,.3)}
+</style>
+
+<section class="admin-wrap">
+  <div class="panel reveal">
+    <span class="meta">// ADMIN · 全站数据</span>
+    <h2>站长管理台</h2>
+    <p class="muted">你可以看到所有用户、训练记录、动态和收藏数据。</p>
+
+    <div class="stat-grid">
+      <div class="panel stat-card reveal d1"><div class="n">{{ total_users }}</div><div class="l">注册用户</div></div>
+      <div class="panel stat-card reveal d1"><div class="n">{{ total_diagnosis }}</div><div class="l">诊断画像</div></div>
+      <div class="panel stat-card reveal d2"><div class="n">{{ total_entries }}</div><div class="l">记一笔/推演</div></div>
+      <div class="panel stat-card reveal d2"><div class="n">{{ total_posts }}</div><div class="l">社区动态</div></div>
+      <div class="panel stat-card reveal d3"><div class="n">{{ total_classics_fav }}</div><div class="l">国学收藏</div></div>
+    </div>
+  </div>
+
+  <div class="sec reveal d2"><span class="no">USER</span><h2>用户列表</h2><span class="line"></span></div>
+  <div class="panel reveal d3" style="overflow-x:auto">
+    <table class="user-table">
+      <thead>
+        <tr><th>ID</th><th>用户名</th><th>邮箱</th><th>等级</th><th>XP</th><th>连续</th><th>注册时间</th><th>角色</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="mono">{{ u.id }}</td>
+          <td><b>{{ u.username }}</b></td>
+          <td class="mono">{{ u.email or '-' }}</td>
+          <td>{{ u.level or 1 }}</td>
+          <td>{{ u.xp or 0 }}</td>
+          <td>{{ u.streak_days or 0 }}</td>
+          <td class="mono">{{ u.created_at }}</td>
+          <td>{% if u.is_admin %}<span class="badge-pill">站长</span>{% else %}<span class="muted">用户</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

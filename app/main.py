@@ -22,6 +22,7 @@ def on_startup():
     db.init_db()
     seed.seed_daoist_cards()
     seed.seed_classics()
+    auth.ensure_owner()
     start_scheduler()
 
 
@@ -41,6 +42,7 @@ def ctx(request: Request) -> dict:
         "user": user,
         "growth": growth.get_growth(user["id"]) if user else None,
         "is_guest": user is None,
+        "is_admin": auth.is_admin(user),
     }
 
 
@@ -309,6 +311,29 @@ def logout(request: Request):
     resp = RedirectResponse("/", status_code=303)
     resp.delete_cookie(auth.SESSION_COOKIE)
     return resp
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_page(request: Request):
+    u = get_current_user(request)
+    if not auth.is_admin(u):
+        return RedirectResponse("/login", status_code=303)
+    c = ctx(request)
+    users = db.query(
+        "SELECT u.id, u.username, u.email, u.is_admin, u.created_at, "
+        "g.xp, g.level, g.streak_days "
+        "FROM users u LEFT JOIN user_growth g ON g.user_id=u.id "
+        "ORDER BY u.id"
+    )
+    c.update({
+        "users": users,
+        "total_users": db.query_one("SELECT COUNT(*) AS c FROM users")["c"],
+        "total_entries": db.query_one("SELECT COUNT(*) AS c FROM entries")["c"],
+        "total_posts": db.query_one("SELECT COUNT(*) AS c FROM posts")["c"],
+        "total_classics_fav": db.query_one("SELECT COUNT(*) AS c FROM classics_fav")["c"],
+        "total_diagnosis": db.query_one("SELECT COUNT(*) AS c FROM diagnosis_profile")["c"],
+    })
+    return templates.TemplateResponse("admin.html", c)
 
 
 # ---------------- 社交 API ----------------

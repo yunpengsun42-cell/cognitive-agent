@@ -133,9 +133,36 @@ body::after{width:560px;height:560px;background:radial-gradient(circle,#8b5cf6,t
 .muted{color:var(--muted)}
 
 /* ---------- 表单 ---------- */
-textarea,input,select{font-family:var(--sans)!important}
-textarea:focus,input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(52,211,230,.16)!important;outline:none}
+form{display:flex;flex-direction:column;gap:1rem}
+label{display:flex;flex-direction:column;gap:.42rem;font-size:.88rem;color:var(--muted);font-weight:500}
+label b{font-weight:600;color:var(--text)}
+input[type="text"],input[type="password"],input[type="email"],input[type="number"],input[type="search"],textarea,select{
+  width:100%;min-height:46px;
+  background:rgba(255,255,255,.025)!important;
+  color:var(--text)!important;
+  border:1px solid var(--line-2)!important;
+  border-radius:12px!important;
+  padding:.85rem 1rem!important;
+  font-family:var(--sans)!important;font-size:.95rem!important;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.2)!important;
+  transition:.2s!important;
+  -webkit-appearance:none;appearance:none;
+}
+input[type="text"]:hover,input[type="password"]:hover,input[type="email"]:hover,input[type="number"]:hover,input[type="search"]:hover,textarea:hover,select:hover{
+  border-color:var(--line-2)!important;
+  background:rgba(255,255,255,.045)!important;
+}
+input[type="text"]:focus,input[type="password"]:focus,input[type="email"]:focus,input[type="number"]:focus,input[type="search"]:focus,textarea:focus,select:focus{
+  border-color:var(--accent)!important;
+  box-shadow:0 0 0 3px rgba(52,211,230,.16),inset 0 1px 2px rgba(0,0,0,.2)!important;
+  outline:none!important;
+  background:rgba(255,255,255,.055)!important;
+}
+input::placeholder,textarea::placeholder{color:var(--muted)!important;opacity:.7!important}
+select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238e96ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right .9rem center!important;padding-right:2.4rem!important}
 button{font-family:var(--sans)}
+button[type="submit"]{border:none}
+
 
 /* ---------- 雷达图 ---------- */
 .radar-wrap{display:flex;flex-direction:column;align-items:center;gap:1rem}
@@ -230,6 +257,7 @@ button{font-family:var(--sans)}
     <a href="/practice" data-path="/practice">记一笔</a>
     <a href="/report" data-path="/report">周报</a>
     <a href="/community" data-path="/community">社区</a>
+    {% if is_admin %}<a href="/admin" data-path="/admin">管理台</a>{% endif %}
   </nav>
   {% if user %}
   <div class="userbox">

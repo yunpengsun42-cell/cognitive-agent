@@ -170,12 +170,14 @@ def init_db():
     DATA_DIR.mkdir(exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.executescript(SCHEMA)
-    # 迁移:老库 users 可能没有 username/email 列
+    # 迁移:老库 users 可能没有 username/email/is_admin 列
     cols = [r[1] for r in conn.execute("PRAGMA table_info(users)")]
     if "username" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN username TEXT")
     if "email" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN email TEXT")
+    if "is_admin" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
     conn.commit()
     cur = conn.execute("SELECT id FROM users LIMIT 1")
     if cur.fetchone() is None:

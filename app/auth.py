@@ -11,6 +11,11 @@ from . import db
 SESSION_COOKIE = "sid"
 SESSION_DAYS = 30
 
+# 站长(owner)账号. 建议首次登录后修改用户名,但这里提供一个可工作的初始入口.
+# 在 CloudStudio 部署前最好把 OWNER_PASSWORD 改为你自己记得住的强密码.
+OWNER_USERNAME = "owner"
+OWNER_PASSWORD = "cognitive2026!"
+
 
 def _now() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -32,6 +37,38 @@ def verify_password(pw: str, stored: str) -> bool:
         return secrets.compare_digest(dk.hex(), want)
     except Exception:
         return False
+
+
+# ---------- 站长(owner) ----------
+def ensure_owner():
+    """启动时保证存在一个 owner 账号,可看到所有用户数据."""
+    row = db.query_one("SELECT id, password_hash FROM users WHERE username=?", (OWNER_USERNAME,))
+    if row:
+        if not row["password_hash"]:
+            db.execute(
+                "UPDATE users SET password_hash=?, is_admin=1 WHERE id=?",
+                (hash_password(OWNER_PASSWORD), row["id"]),
+            )
+        else:
+            db.execute(
+                "UPDATE users SET is_admin=1 WHERE id=?",
+                (row["id"],),
+            )
+        return
+    uid = db.execute(
+        "INSERT INTO users (username, password_hash, created_at) VALUES (?,?,?)",
+        (OWNER_USERNAME, hash_password(OWNER_PASSWORD), _now()),
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO user_growth "
+        "(user_id, xp, level, streak_days, badges, last_active_date, updated_at) "
+        "VALUES (?,0,1,0,'[]',NULL,?)",
+        (uid, _now()),
+    )
+
+
+def is_admin(user: dict) -> bool:
+    return bool(user and user.get("is_admin"))
 
 
 # ---------- 注册 / 认证 ----------
@@ -58,7 +95,7 @@ def register(username: str, password: str, email: str = None):
 
 def authenticate(username: str, password: str):
     row = db.query_one("SELECT * FROM users WHERE username=?", (username,))
-    if not row or not verify_password(password, row.get("password_hash") or ""):
+    if not row or not verify_password(password, row["password_hash"] or ""):
         return None
     return dict(row)
 
