@@ -14,9 +14,9 @@
   --line-2:#363b45;
   --text:#e8e4da;
   --muted:#8b9099;
-  --accent:#c8a24a;        /* 黄铜 */
-  --accent-soft:#d9b867;
-  --jade:#4a9d8e;          /* 道青 */
+  --accent:#5cc8d8;        /* 冰蓝青 */
+  --accent-soft:#7fdbec;
+  --jade:#8b7fe0;          /* 冷紫 */
   --danger:#c0453a;        /* 忌·红 */
   --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
   --sans:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
@@ -48,7 +48,7 @@ body{
   animation:fade .45s ease both;
 }
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-::selection{background:rgba(200,162,74,.3)}
+::selection{background:rgba(92,200,216,.3)}
 
 /* ---------- 顶栏 ---------- */
 .brand{
@@ -76,7 +76,7 @@ body{
   padding:.32rem .7rem;border:1px solid transparent;border-radius:2px;transition:.18s;
 }
 .nav a:hover{color:var(--text);border-color:var(--line)}
-.nav a.active{color:var(--accent);border-color:var(--line-2);background:rgba(200,162,74,.08)}
+.nav a.active{color:var(--accent);border-color:var(--line-2);background:rgba(92,200,216,.08)}
 
 /* ---------- 区块标题 ---------- */
 .sec{display:flex;align-items:center;gap:.7rem;margin:2.4rem 0 1rem}
@@ -111,14 +111,14 @@ button,.btn{
 }
 button:hover,.btn:hover{transform:translateY(-1px)}
 textarea,input,select{border-radius:3px!important;border:1px solid var(--line)!important;background:var(--bg-3)!important;color:var(--text)!important;font-family:var(--sans)}
-textarea:focus,input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(200,162,74,.16)!important}
+textarea:focus,input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(92,200,216,.16)!important}
 a{color:var(--accent)}
 a:hover{color:var(--accent-soft)}
 
 /* 标签 / chip */
 .tag{display:inline-block;font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;padding:.12rem .5rem;border:1px solid var(--line-2);border-radius:2px;color:var(--muted)}
-.tag.accent{color:var(--accent);border-color:rgba(200,162,74,.4)}
-.tag.jade{color:var(--jade);border-color:rgba(74,157,142,.4)}
+.tag.accent{color:var(--accent);border-color:rgba(92,200,216,.4)}
+.tag.jade{color:var(--jade);border-color:rgba(139,127,224,.4)}
 
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-family:var(--mono);font-size:.7rem;letter-spacing:.06em}
 
