@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 from fastapi import FastAPI, Request, Form, Body
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -6,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from . import db, services, seed
 from .scheduler import start as start_scheduler
 from .prompts import DIAGNOSIS_QUESTIONS
+from .classics_data import CATEGORY_ORDER
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
@@ -17,6 +19,7 @@ app = FastAPI(title="认知内核训练智能体")
 def on_startup():
     db.init_db()
     seed.seed_daoist_cards()
+    seed.seed_classics()
     start_scheduler()
 
 
@@ -35,6 +38,8 @@ def home(request: Request):
         "SELECT id FROM diagnosis_profile WHERE user_id=? ORDER BY id DESC",
         (db.USER_ID,),
     )
+    classics_rows = db.query("SELECT * FROM classics ORDER BY id")
+    classics_json = json.dumps([dict(r) for r in classics_rows], ensure_ascii=False)
     return templates.TemplateResponse("home.html", {
         "request": request,
         "scenario": scenario,
@@ -44,6 +49,7 @@ def home(request: Request):
         "streak": streak_row["streak_weeks"] if streak_row else 0,
         "has_profile": bool(has_profile),
         "questions": DIAGNOSIS_QUESTIONS,
+        "classics_json": classics_json,
     })
 
 
@@ -152,21 +158,17 @@ def report_generate():
     return RedirectResponse("/report", status_code=303)
 
 
-@app.get("/daoist", response_class=HTMLResponse)
-def daoist_page(request: Request, scenario: str = ""):
-    if scenario:
-        card = db.query_one(
-            "SELECT * FROM daoist_cards WHERE applicable_scenario LIKE ? "
-            "ORDER BY RANDOM() LIMIT 1", (f"%{scenario}%",)
-        )
-    else:
-        card = None
-    all_cards = db.query("SELECT * FROM daoist_cards ORDER BY id")
-    return templates.TemplateResponse("daoist.html", {
+@app.get("/classics", response_class=HTMLResponse)
+def classics_page(request: Request, category: str = ""):
+    rows = db.query("SELECT * FROM classics ORDER BY id")
+    cards = [dict(r) for r in rows]
+    cats = [c for c in CATEGORY_ORDER
+            if any(card["category"] == c for card in cards)]
+    return templates.TemplateResponse("classics.html", {
         "request": request,
-        "card": card,
-        "all_cards": all_cards,
-        "scenario": scenario,
+        "categories": cats,
+        "classics_json": json.dumps(cards, ensure_ascii=False),
+        "active_category": category,
     })
 
 
@@ -247,6 +249,15 @@ def api_daoist_match(scenario: str = ""):
         (f"%{scenario}%",),
     )
     return dict(r) if r else {}
+
+
+@app.get("/api/classics")
+def api_classics(category: str = ""):
+    if category:
+        rows = db.query("SELECT * FROM classics WHERE category=? ORDER BY id", (category,))
+    else:
+        rows = db.query("SELECT * FROM classics ORDER BY id")
+    return [dict(r) for r in rows]
 
 
 @app.get("/api/reminders")

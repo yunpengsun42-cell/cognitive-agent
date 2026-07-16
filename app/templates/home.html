@@ -1,63 +1,196 @@
 {% extends "base.html" %}
-{% block title %}首页 · 认知内核训练{% endblock %}
+{% block title %}首页 · 认知内核训练终端{% endblock %}
 {% block content %}
-<h2>今日训练</h2>
-<p class="muted">连续记录 <strong>{{ streak }}</strong> 周</p>
+<style>
+/* HERO */
+.hero{display:grid;grid-template-columns:1.35fr 1fr;gap:1.2rem;align-items:stretch;margin-bottom:.5rem}
+.hero-main{display:flex;flex-direction:column;justify-content:center;padding:.4rem 0}
+.hero-title{font-size:clamp(1.9rem,4.4vw,3rem);line-height:1.12;margin:.7rem 0;font-weight:800;letter-spacing:.01em}
+.hero-title .hl{color:var(--accent)}
+.hero-sub{color:var(--muted);font-size:.95rem;line-height:1.7;margin:0 0 1.3rem}
+.hero-cta{display:flex;gap:.7rem;flex-wrap:wrap}
+.btn{display:inline-block;text-decoration:none!important}
+.btn.primary{background:var(--accent);color:#0e0f12;border:1px solid var(--accent)}
+.btn.primary:hover{background:var(--accent-soft);color:#0e0f12}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line-2)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
 
+/* 今日签 */
+.sign-panel{display:flex;flex-direction:column;gap:.7rem;background:linear-gradient(160deg,var(--bg-2),var(--bg-3))}
+.sign-head{display:flex;justify-content:space-between;align-items:center}
+.sign-ref{font-family:var(--mono);font-size:.74rem;color:var(--muted);letter-spacing:.05em}
+.sign-text{font-family:var(--serif);font-size:1.18rem;line-height:1.85;color:var(--text);margin:.4rem 0 .6rem;padding-left:.8rem;border-left:2px solid var(--accent);quotes:none}
+.sign-yiji{display:flex;gap:1rem;font-family:var(--mono);font-size:.78rem;letter-spacing:.05em}
+.sign-yiji .yi{color:var(--jade)} .sign-yiji .yi b{color:var(--jade)}
+.sign-yiji .ji{color:var(--danger)} .sign-yiji .ji b{color:var(--danger)}
+.sign-foot{margin-top:auto}
+.sign-foot .link{font-family:var(--mono);font-size:.78rem;text-decoration:none}
+
+/* 模块网格 */
+.modules{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.module{display:flex;flex-direction:column;gap:.45rem;text-decoration:none;color:var(--text);padding:1.3rem 1.3rem 1.1rem}
+.module h3{color:var(--text);font-size:1.08rem;margin:.2rem 0}
+.module .m-no{font-family:var(--mono);font-size:1.5rem;color:var(--line-2);font-weight:800;line-height:1}
+.module .m-go{font-family:var(--mono);font-size:.8rem;color:var(--accent);margin-top:.3rem}
+.module .led{position:absolute;top:1.1rem;right:1.1rem;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.module .led.jade{background:var(--jade);box-shadow:0 0 8px var(--jade)}
+
+/* 数据流入 */
+.feed{display:flex;flex-direction:column}
+.feed-row{display:grid;grid-template-columns:90px 1fr;gap:.9rem;padding:.8rem 0;border-bottom:1px solid var(--line)}
+.feed-row:last-child{border-bottom:none}
+.feed-main strong{font-weight:600}
+.feed-main p{margin:.2rem 0 0}
+
+.row{display:flex;gap:.6rem;align-items:center;margin-bottom:.6rem}
+.row select{flex:0 0 150px}
+
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr}
+  .modules{grid-template-columns:1fr}
+  .feed-row{grid-template-columns:70px 1fr}
+}
+</style>
+
+<!-- ============ 00 / HERO + 今日签 ============ -->
+<section class="hero">
+  <div class="hero-main">
+    <span class="meta">// 系统就绪 · 今天是训练的第 {{ streak }} 周</span>
+    <h1 class="hero-title">把每一个念头<br>都当成一次<span class="hl">训练</span>。</h1>
+    <p class="hero-sub">诊断你的决策偏差 · 推演今日场景 · 抽取国学智慧 · 生成每周复盘。<br>一台属于你自己的"认知仪器"。</p>
+    <div class="hero-cta">
+      <a class="btn primary" href="/diagnosis">开始诊断 →</a>
+      <a class="btn ghost" href="/classics">抽一张国学卡</a>
+    </div>
+  </div>
+
+  <aside class="sign-panel panel" id="signPanel">
+    <div class="sign-head">
+      <span class="meta">今日签 / DAILY SIGN</span>
+      <span class="tag accent" id="signCode">··</span>
+    </div>
+    <div class="sign-body">
+      <div class="sign-ref" id="signRef">—</div>
+      <blockquote class="sign-text" id="signText">正在抽取…</blockquote>
+      <div class="sign-yiji">
+        <span class="yi">宜 <b id="signYi">—</b></span>
+        <span class="ji">忌 <b id="signJi">—</b></span>
+      </div>
+    </div>
+    <div class="sign-foot">
+      <a class="link" href="/classics">去国学卡 →</a>
+    </div>
+  </aside>
+</section>
+
+<!-- ============ 01 / 训练模块 ============ -->
+<div class="sec"><span class="no">01</span><h2>训练模块</h2><span class="line"></span></div>
+<div class="modules">
+  <a class="module panel" href="/diagnosis">
+    <span class="m-no">01</span><span class="led"></span>
+    <h3>认知诊断</h3>
+    <p class="muted">12 题看清你的决策风格、情绪敏感源与认知偏差倾向。</p>
+    <span class="m-go">进入 →</span>
+  </a>
+  <a class="module panel" href="/#scenario">
+    <span class="m-no">02</span><span class="led"></span>
+    <h3>场景推演</h3>
+    <p class="muted">每天一道贴合你画像的情境题,在作答里练习判断。</p>
+    <span class="m-go">进入 →</span>
+  </a>
+  <a class="module panel" href="/classics">
+    <span class="m-no">03</span><span class="led jade"></span>
+    <h3>国学卡</h3>
+    <p class="muted">道家 · 儒家 · 兵家 · 易理 · 诗词 · 法家 · 养生,抽一张原文。</p>
+    <span class="m-go">进入 →</span>
+  </a>
+  <a class="module panel" href="/report">
+    <span class="m-no">04</span><span class="led"></span>
+    <h3>每周复盘</h3>
+    <p class="muted">把一周的记录汇成结构化周报,连续记录满 {{ streak }} 周。</p>
+    <span class="m-go">进入 →</span>
+  </a>
+</div>
+
+<!-- ============ 02 / 今日推演 ============ -->
+<div class="sec" id="scenario"><span class="no">02</span><h2>今日场景推演</h2><span class="line"></span></div>
 {% if not has_profile %}
-<article class="card"><strong>还没做诊断</strong><br>
-<a href="/diagnosis">先花5分钟完成12题诊断 →</a></article>
-{% endif %}
-
-{% if scenario %}
-<article class="card scene">
-<h3>今日场景推演</h3>
-<p>{{ scenario.question_text }}</p>
-<form method="post" action="/scenario/answer">
-<textarea name="raw_text" rows="3" placeholder="写下你的判断 / 做法…"></textarea>
-<input type="hidden" name="scenario_id" value="{{ scenario.id }}">
-<button type="submit">提交作答</button>
-</form>
-</article>
-{% endif %}
-
-{% for r in reminders %}
-<article class="card reminder">
-<h3>{{ r.title }}</h3>
-<p>{{ r.content_text }}</p>
-<form method="post" action="/reminders/{{ r.id }}/read">
-<button type="submit">知道了</button>
-</form>
-</article>
-{% endfor %}
-
-{% if training %}
-<article class="card">
-<h3>训练精选 · {{ training.title }}</h3>
-<p class="muted">{{ training.summary }}</p>
-<p><strong>教练追问:</strong>{{ training.ai_question }}</p>
-</article>
-{% endif %}
-
-<h3>今日要闻</h3>
-{% for n in news %}
-<article class="card">
-<strong>{{ n.title }}</strong> <span class="tag">{{ n.category }}</span>
-<p class="muted">{{ n.summary }}</p>
+<article class="panel"><strong>还没有诊断画像</strong><br>
+<a href="/diagnosis">先花 5 分钟完成 12 题诊断,推演题才会贴合你 →</a></article>
+{% elif scenario %}
+<article class="panel scene">
+  <span class="meta">SCENARIO · {{ scenario.question_date }}</span>
+  <h3>{{ scenario.question_text }}</h3>
+  <form method="post" action="/scenario/answer">
+    <textarea name="raw_text" rows="3" placeholder="写下你的判断 / 做法…"></textarea>
+    <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+    <button type="submit">提交作答</button>
+  </form>
 </article>
 {% else %}
-<p class="muted">今日要闻尚未抓取(每日 07:00 自动更新)。</p>
-{% endfor %}
+<article class="panel"><span class="muted">今日推演题尚未生成(每日首次访问自动生成)。<a href="/">刷新一下</a>。</span></article>
+{% endif %}
 
-<h3>记一笔</h3>
-<form method="post" action="/practice/new">
-<select name="entry_type">
-<option value="decision">决策</option>
-<option value="emotion">情绪</option>
-<option value="news_reflection">新闻反思</option>
-<option value="daoist_practice">道家实践</option>
-</select>
-<textarea name="raw_text" rows="3" placeholder="刚才发生了什么?你的念头 / 选择?"></textarea>
-<button type="submit">保存</button>
+<!-- ============ 03 / 待办提醒 ============ -->
+{% if reminders %}
+<div class="sec"><span class="no">03</span><h2>待处理提醒</h2><span class="line"></span></div>
+{% for r in reminders %}
+<article class="panel reminder">
+  <h3>{{ r.title }}</h3>
+  <p>{{ r.content_text }}</p>
+  <form method="post" action="/reminders/{{ r.id }}/read">
+    <button type="submit">知道了</button>
+  </form>
+</article>
+{% endfor %}
+{% endif %}
+
+<!-- ============ 04 / 数据流入 ============ -->
+<div class="sec"><span class="no">04</span><h2>数据流入 · 今日要闻</h2><span class="line"></span></div>
+<div class="feed">
+{% for n in news %}
+  <article class="feed-row">
+    <span class="meta">{{ n.category }}</span>
+    <div class="feed-main"><strong>{{ n.title }}</strong><p class="muted">{{ n.summary }}</p></div>
+  </article>
+{% else %}
+  <p class="muted">今日要闻尚未抓取(每日 07:00 自动更新)。</p>
+{% endfor %}
+</div>
+
+<!-- ============ 05 / 记一笔 ============ -->
+<div class="sec"><span class="no">05</span><h2>记一笔</h2><span class="line"></span></div>
+<form class="panel" method="post" action="/practice/new">
+  <div class="row">
+    <select name="entry_type">
+      <option value="decision">决策</option>
+      <option value="emotion">情绪</option>
+      <option value="news_reflection">新闻反思</option>
+      <option value="daoist_practice">国学实践</option>
+    </select>
+    <button type="submit">保存</button>
+  </div>
+  <textarea name="raw_text" rows="3" placeholder="刚才发生了什么?你的念头 / 选择?"></textarea>
 </form>
+
+<script>
+const CLASSICS = {{ classics_json | safe }};
+const CATEGORY_JI = {
+  "道家":"强为","儒家":"放纵","兵家":"轻动","易理":"执固",
+  "诗词":"喧扰","法家":"徇私","养生":"耗神"
+};
+(function(){
+  if(!CLASSICS.length) return;
+  // 今日签:按日期确定性抽取(同一天同一张)
+  var d = new Date();
+  var key = d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+  var h = 0; for(var i=0;i<key.length;i++){ h=(h*31+key.charCodeAt(i))>>>0; }
+  var c = CLASSICS[h % CLASSICS.length];
+  document.getElementById('signCode').textContent = c.code;
+  document.getElementById('signRef').textContent = c.book + " · " + c.chapter;
+  document.getElementById('signText').textContent = "“" + c.text + "”";
+  document.getElementById('signYi').textContent = c.yi || "守中";
+  document.getElementById('signJi').textContent = CATEGORY_JI[c.category] || "妄动";
+})();
+</script>
 {% endblock %}

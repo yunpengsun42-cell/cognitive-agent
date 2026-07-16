@@ -58,6 +58,16 @@ CREATE TABLE IF NOT EXISTS daoist_cards (
     applicable_scenario TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS classics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    book TEXT NOT NULL,
+    chapter TEXT NOT NULL,
+    text TEXT NOT NULL,
+    yi TEXT,
+    code TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS daily_news (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,

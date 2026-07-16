@@ -1,106 +1,153 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}认知内核训练{% endblock %}</title>
+<title>{% block title %}认知内核训练终端{% endblock %}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pico.css@1.5.10/css/pico.min.css">
 <style>
 :root{
-  --ink:#23202b;
-  --paper:#f6f3ec;
-  --paper-2:#ffffff;
-  --accent:#b5443a;
-  --accent-soft:#c75a4d;
-  --jade:#3f6f5e;
-  --muted:#8a8478;
-  --line:#e7e1d6;
-  --shadow:0 6px 24px rgba(35,32,43,.08);
-  --radius:16px;
-  --pico-background-color:var(--paper);
-  --pico-card-background-color:var(--paper-2);
+  --bg:#0e0f12;
+  --bg-2:#16181d;
+  --bg-3:#1c1f26;
+  --line:#2a2e36;
+  --line-2:#363b45;
+  --text:#e8e4da;
+  --muted:#8b9099;
+  --accent:#c8a24a;        /* 黄铜 */
+  --accent-soft:#d9b867;
+  --jade:#4a9d8e;          /* 道青 */
+  --danger:#c0453a;        /* 忌·红 */
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --serif:"Songti SC","STSong","SimSun",serif;
+  /* Pico 暗色覆盖 */
+  --pico-background-color:var(--bg);
+  --pico-card-background-color:var(--bg-2);
   --pico-primary:var(--accent);
   --pico-primary-hover:var(--accent-soft);
+  --pico-primary-inverse:#0e0f12;
+  --pico-color:var(--text);
   --pico-muted-color:var(--muted);
   --pico-border-color:var(--line);
-  --pico-border-radius:var(--radius);
-  --pico-font-family:'PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+  --pico-border-radius:3px;
+  --pico-font-family:var(--sans);
 }
 *{box-sizing:border-box}
+html,body{margin:0;padding:0}
 body{
-  max-width:760px;margin:0 auto;padding:0 1rem 4rem;
-  color:var(--ink);
-  background:
-    radial-gradient(1200px 400px at 50% -200px, rgba(181,68,58,.06), transparent),
-    var(--paper);
-  font-size:16px;line-height:1.7;
-  animation:fade .5s ease both;
+  max-width:1140px;margin:0 auto;padding:0 1.1rem 4rem;
+  color:var(--text);
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:32px 32px;
+  font-family:var(--sans);font-size:15.5px;line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+  animation:fade .45s ease both;
 }
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+::selection{background:rgba(200,162,74,.3)}
+
+/* ---------- 顶栏 ---------- */
 .brand{
-  position:sticky;top:0;z-index:10;
-  margin:0 -1rem 1.4rem;padding:1rem 1rem .9rem;
-  background:rgba(246,243,236,.82);
-  backdrop-filter:saturate(180%) blur(12px);
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  margin:0 -1.1rem 1.8rem;padding:.85rem 1.1rem;
+  background:rgba(14,15,18,.78);
+  backdrop-filter:saturate(160%) blur(10px);
   border-bottom:1px solid var(--line);
 }
-.brand h1{font-size:1.25rem;margin:0;letter-spacing:.06em;font-weight:800}
-.brand h1 .dot{color:var(--accent)}
-.brand .sub{font-size:.78rem;color:var(--muted);margin:.12rem 0 0;letter-spacing:.04em}
-.nav{display:flex;gap:.4rem;margin-top:.7rem;flex-wrap:wrap}
+.brand .id{display:flex;flex-direction:column;line-height:1.15}
+.brand h1{
+  font-size:1.06rem;margin:0;letter-spacing:.16em;font-weight:800;
+  font-family:var(--mono);
+}
+.brand h1 .mk{color:var(--accent)}
+.brand .sub{font-size:.7rem;color:var(--muted);letter-spacing:.08em;margin-top:.2rem;font-family:var(--mono)}
+.brand .status{display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.led{width:7px;height:7px;border-radius:50%;background:var(--jade);box-shadow:0 0 8px var(--jade);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.nav{display:flex;gap:.35rem;flex-wrap:wrap}
 .nav a{
-  text-decoration:none;color:var(--ink);
-  font-size:.86rem;padding:.34rem .85rem;border-radius:999px;
-  border:1px solid transparent;transition:.2s;
+  text-decoration:none;color:var(--muted);
+  font-size:.8rem;font-family:var(--mono);letter-spacing:.04em;
+  padding:.32rem .7rem;border:1px solid transparent;border-radius:2px;transition:.18s;
 }
-.nav a:hover{background:rgba(181,68,58,.07)}
-.nav a.active{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(181,68,58,.3)}
-h2{font-size:1.35rem;letter-spacing:.04em;margin:1.6rem 0 .6rem;display:flex;align-items:center;gap:.5rem}
-h2::before{content:"";width:4px;height:1.1em;background:var(--accent);border-radius:2px;display:inline-block}
-h3{font-size:1.05rem;margin:.2rem 0 .5rem;color:var(--ink)}
-.card{
-  background:var(--paper-2);
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:1.1rem 1.2rem;
-  margin:.8rem 0;
-  box-shadow:var(--shadow);
-  transition:transform .2s, box-shadow .2s;
+.nav a:hover{color:var(--text);border-color:var(--line)}
+.nav a.active{color:var(--accent);border-color:var(--line-2);background:rgba(200,162,74,.08)}
+
+/* ---------- 区块标题 ---------- */
+.sec{display:flex;align-items:center;gap:.7rem;margin:2.4rem 0 1rem}
+.sec .no{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:.1em;border:1px solid var(--line-2);padding:.12rem .45rem;border-radius:2px}
+.sec h2{font-size:1.18rem;margin:0;letter-spacing:.05em;font-weight:700}
+.sec .line{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+/* ---------- 面板(工业风卡片) ---------- */
+.panel{
+  position:relative;background:var(--bg-2);
+  border:1px solid var(--line);border-radius:3px;
+  padding:1.15rem 1.25rem;margin:.85rem 0;
+  transition:border-color .2s,transform .2s,box-shadow .2s;
 }
-.card:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(35,32,43,.12)}
-.card.scene{border-left:4px solid var(--accent)}
-.card.reminder{border-left:4px solid var(--jade)}
-.card.profile{border-left:4px solid var(--accent)}
+.panel::before,.panel::after{content:"";position:absolute;width:11px;height:11px;border:1px solid var(--accent);opacity:.45;transition:opacity .2s}
+.panel::before{top:-1px;left:-1px;border-right:none;border-bottom:none}
+.panel::after{bottom:-1px;right:-1px;border-left:none;border-top:none}
+.panel:hover{border-color:var(--line-2);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.panel:hover::before,.panel:hover::after{opacity:.9}
+.panel h3{margin:.1rem 0 .5rem;font-size:1.02rem;letter-spacing:.03em}
+.panel.scene{border-left:2px solid var(--accent)}
+.panel.reminder{border-left:2px solid var(--jade)}
+
 .muted{color:var(--muted);font-size:.85rem}
-textarea,input,select{border-radius:12px !important;border:1px solid var(--line) !important;background:#fff !important}
-textarea:focus,input:focus,select:focus{border-color:var(--accent) !important;box-shadow:0 0 0 3px rgba(181,68,58,.15) !important}
-button,.btn{border-radius:999px !important;font-weight:600 !important;padding:.5rem 1.3rem !important;transition:.2s;cursor:pointer}
-button:hover{transform:translateY(-1px)}
+.meta{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+
+/* ---------- 按钮 / 表单 ---------- */
+button,.btn{
+  font-family:var(--mono)!important;letter-spacing:.06em;font-weight:600!important;
+  border-radius:2px!important;cursor:pointer;transition:.18s;
+  padding:.5rem 1.1rem!important;text-transform:uppercase;font-size:.8rem!important;
+}
+button:hover,.btn:hover{transform:translateY(-1px)}
+textarea,input,select{border-radius:3px!important;border:1px solid var(--line)!important;background:var(--bg-3)!important;color:var(--text)!important;font-family:var(--sans)}
+textarea:focus,input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(200,162,74,.16)!important}
 a{color:var(--accent)}
-.tag{display:inline-block;font-size:.72rem;padding:.1rem .55rem;border-radius:999px;background:rgba(63,111,94,.12);color:var(--jade);margin-left:.4rem}
-footer{margin-top:2.6rem;text-align:center;color:var(--muted);font-size:.75rem}
-@media (max-width:560px){
-  .brand h1{font-size:1.1rem}
-  .nav a{padding:.3rem .65rem;font-size:.8rem}
+a:hover{color:var(--accent-soft)}
+
+/* 标签 / chip */
+.tag{display:inline-block;font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;padding:.12rem .5rem;border:1px solid var(--line-2);border-radius:2px;color:var(--muted)}
+.tag.accent{color:var(--accent);border-color:rgba(200,162,74,.4)}
+.tag.jade{color:var(--jade);border-color:rgba(74,157,142,.4)}
+
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-family:var(--mono);font-size:.7rem;letter-spacing:.06em}
+
+@media (max-width:640px){
+  .brand{flex-direction:column;align-items:flex-start;gap:.6rem}
+  .brand .status{align-self:flex-end;margin-top:-1.9rem}
+  body{font-size:15px}
 }
 </style>
 </head>
 <body>
 <header class="brand">
-  <h1>认知内核<span class="dot">·</span>训练</h1>
-  <p class="sub">看清你的念头，重写你的选择</p>
+  <div class="id">
+    <h1>认知内核<span class="mk">·</span>训练终端</h1>
+    <span class="sub">COGNITIVE CORE // TRAINING TERMINAL</span>
+  </div>
+  <div class="status"><span class="led"></span> ONLINE · GLM-4-FLASH</div>
   <nav class="nav">
     <a href="/" data-path="/">首页</a>
     <a href="/diagnosis" data-path="/diagnosis">诊断</a>
     <a href="/practice" data-path="/practice">练习</a>
     <a href="/report" data-path="/report">周报</a>
-    <a href="/daoist" data-path="/daoist">道家卡</a>
+    <a href="/classics" data-path="/classics">国学卡</a>
   </nav>
 </header>
 <main>
 {% block content %}{% endblock %}
 </main>
-<footer>认知内核训练 · AI 陪练基于 GLM-4-Flash · 数据留存于本地</footer>
+<footer>认知内核训练终端 · 数据留存于本地 · 国学原文取自公有领域典籍</footer>
 <script>
   (function(){
     var p=location.pathname;
