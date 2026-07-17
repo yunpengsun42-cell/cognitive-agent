@@ -175,9 +175,10 @@ def scenario_answer(request: Request, raw_text: str = Form(...), scenario_id: in
 def practice_new(request: Request, entry_type: str = Form("decision"),
                  raw_text: str = Form(...), source_ref: str = Form(None)):
     uid = uid_of(request)
-    services.create_entry(entry_type, raw_text, source_ref, user_id=uid)
+    eid = services.create_entry(entry_type, raw_text, source_ref, user_id=uid)
     if uid != db.USER_ID:
         growth.award_xp(uid, growth.XP_ENTRY, "entry", {"type": entry_type})
+        services.generate_entry_coaching(eid)
     return RedirectResponse("/practice", status_code=303)
 
 
@@ -262,6 +263,54 @@ def report_generate(request: Request):
     uid = uid_of(request)
     services.generate_weekly_summary(uid)
     return RedirectResponse("/report", status_code=303)
+
+
+@app.get("/train", response_class=HTMLResponse)
+def train_page(request: Request):
+    uid = uid_of(request)
+    c = ctx(request)
+    radar = services.get_training_radar(uid)
+    best = services.training_best(uid)
+    recent = services.recent_training(uid, 15)
+    c.update({
+        "has_train": radar is not None,
+        "train_radar_json": json.dumps(radar or {}, ensure_ascii=False),
+        "best": best,
+        "recent": recent,
+        "game_labels": services.GAME_LABELS,
+    })
+    return templates.TemplateResponse("train.html", c)
+
+
+@app.post("/api/train/submit")
+def api_train_submit(request: Request,
+                     game: str = Body(...), score: int = Body(...),
+                     accuracy: float = Body(None), rt_ms: int = Body(None),
+                     level: int = Body(None)):
+    u = get_current_user(request)
+    if not u:
+        return JSONResponse({"error": "请先登录"}, status_code=401)
+    if game not in ("nback", "stroop", "gonogo"):
+        return JSONResponse({"error": "未知训练项目"}, status_code=400)
+    try:
+        score = max(0, min(100, int(score)))
+    except (TypeError, ValueError):
+        return JSONResponse({"error": "成绩无效"}, status_code=400)
+    services.save_training_session(u["id"], game, score, accuracy, rt_ms, level)
+    g = growth.award_xp(u["id"], growth.XP_TRAIN, "train")
+    return {"ok": True, "growth": g, "best": services.training_best(u["id"])}
+
+
+@app.get("/api/train/history")
+def api_train_history(request: Request):
+    uid = uid_of(request)
+    radar = services.get_training_radar(uid)
+    return {
+        "has_train": radar is not None,
+        "radar": radar,
+        "best": services.training_best(uid),
+        "recent": services.recent_training(uid, 15),
+    }
 
 
 @app.get("/classics", response_class=HTMLResponse)

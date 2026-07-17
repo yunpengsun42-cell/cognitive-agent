@@ -170,6 +170,18 @@ CREATE TABLE IF NOT EXISTS usage_log (
     meta TEXT,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS training_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    game TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    accuracy REAL,
+    rt_ms INTEGER,
+    level INTEGER,
+    dim_keys TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
 """
 
 USER_ID = 1
@@ -203,6 +215,14 @@ def init_db():
         conn.execute("ALTER TABLE scenario_questions ADD COLUMN answer_text TEXT")
     if "analysis_text" not in scols:
         conn.execute("ALTER TABLE scenario_questions ADD COLUMN analysis_text TEXT")
+    # 迁移:entries 可能没有 ai_commentary / coach_score / ai_suggestion 列(记一笔 AI 教练点评)
+    ecols = [r[1] for r in conn.execute("PRAGMA table_info(entries)")]
+    if "ai_commentary" not in ecols:
+        conn.execute("ALTER TABLE entries ADD COLUMN ai_commentary TEXT")
+    if "coach_score" not in ecols:
+        conn.execute("ALTER TABLE entries ADD COLUMN coach_score INTEGER")
+    if "ai_suggestion" not in ecols:
+        conn.execute("ALTER TABLE entries ADD COLUMN ai_suggestion TEXT")
     conn.commit()
     cur = conn.execute("SELECT id FROM users LIMIT 1")
     if cur.fetchone() is None:

@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block title %}训练场 · 认知内核训练{% endblock %}
+{% block head %}
+<style>
+.game{display:flex;flex-direction:column;gap:.7rem}
+.game .ghead{display:flex;align-items:baseline;gap:.6rem}
+.game h3{margin:0;font-size:1.1rem}
+.game .tags{display:flex;gap:.4rem;flex-wrap:wrap}
+.game .desc{font-size:.86rem;color:var(--muted);margin:0;line-height:1.6}
+.stage{min-height:230px;border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--bg-3);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1rem;padding:1rem;transition:border-color .2s,box-shadow .2s;position:relative;overflow:hidden}
+.stage.ok{border-color:var(--accent);box-shadow:0 0 0 3px rgba(52,211,230,.18)}
+.stage.bad{border-color:var(--danger);box-shadow:0 0 0 3px rgba(240,101,90,.18)}
+.progress{font-family:var(--mono);font-size:.74rem;color:var(--muted);text-align:center;min-height:1rem}
+.controls{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+/* N-back 九宫格 */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;width:180px}
+.ncell{aspect-ratio:1;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line-2);transition:.08s}
+.ncell.on{background:var(--grad);border-color:transparent;box-shadow:0 0 22px rgba(52,211,230,.6);transform:scale(1.04)}
+/* Stroop */
+.stroop-word{font-size:2.6rem;font-weight:800;letter-spacing:.1em;line-height:1}
+.cbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;width:100%;max-width:340px}
+.cbtn{display:flex;flex-direction:column;align-items:center;gap:.3rem;padding:.6rem .2rem;border-radius:12px;
+  background:var(--glass);border:1px solid var(--line-2);cursor:pointer;transition:.15s;color:var(--text)}
+.cbtn:hover{border-color:var(--accent);transform:translateY(-2px)}
+.cbtn .sw{width:26px;height:26px;border-radius:7px}
+.cbtn .cl{font-size:.74rem;font-family:var(--mono)}
+/* Go/NoGo */
+.gonogo-shape{width:120px;height:120px;display:flex;align-items:center;justify-content:center}
+.gonogo-shape .go{border-radius:50%;width:110px;height:110px;background:linear-gradient(135deg,#5fd38a,#34d3e6);box-shadow:0 0 30px rgba(95,211,138,.5)}
+.gonogo-shape .nogo{border-radius:14px;width:100px;height:100px;background:linear-gradient(135deg,#f0655a,#8b5cf6);box-shadow:0 0 30px rgba(240,101,90,.5)}
+.hint{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+/* 结果卡 */
+.result{display:flex;flex-direction:column;gap:.5rem;background:var(--grad-soft);
+  border:1px solid rgba(52,211,230,.3);border-radius:var(--r-sm);padding:1rem;margin-top:.3rem}
+.result .r-top{display:flex;align-items:center;justify-content:space-between}
+.result .r-score{font-family:var(--mono);font-size:2.2rem;font-weight:800;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.result .r-extra{font-size:.82rem}
+/* 战绩 */
+.best-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:1rem 0}
+.best{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:.8rem;text-align:center}
+.best .bs{font-family:var(--mono);font-size:1.5rem;font-weight:800;color:var(--accent)}
+.best .bn{font-size:.76rem;color:var(--muted);margin-top:.2rem}
+.recent-row{display:flex;align-items:center;gap:.7rem;padding:.5rem 0;border-bottom:1px solid var(--line);font-size:.86rem}
+.recent-row:last-child{border-bottom:none}
+.recent-row .rg{font-family:var(--mono);font-size:.72rem;color:var(--accent);min-width:5.5rem}
+.recent-row .rs{font-weight:700;color:var(--text)}
+.recent-row .rt{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-left:auto}
+.games-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+@media(max-width:860px){.games-wrap{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+
+<section class="hero reveal" style="margin-bottom:1rem">
+  <span class="meta">// 真实训练引擎 · 国际经典实验范式</span>
+  <h1 style="font-size:clamp(1.8rem,4vw,2.8rem);margin:.6rem 0;font-weight:850">在游戏里<span style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">真练</span>你的认知内核。</h1>
+  <p class="muted" style="line-height:1.75;max-width:40rem">
+    诊断图谱回答"你现在在哪"(评估),训练场回答"你能练到哪"(实战表现)。下面三款游戏全部在浏览器内运行、零模型成本,成绩实时计入你的成长与六维训练雷达。每次 1-2 分钟,刻意练习才有迁移。
+  </p>
+</section>
+
+<!-- ============ 三款游戏 ============ -->
+<div class="games-wrap reveal d1">
+
+  <!-- N-back -->
+  <article class="panel game" id="panel-nback">
+    <div class="ghead"><span class="meta">GAME 01</span><h3>N-back 工作记忆</h3></div>
+    <p class="desc">方块依次在九宫格闪现。当前位置与 <b id="nback-diff">n=2</b> 步前相同时,按"匹配"。练的是工作记忆容量与注意维持。</p>
+    <div class="tags"><span class="tag accent">记忆</span><span class="tag accent">注意</span></div>
+    <div class="stage" id="nback-stage">
+      <div class="grid3" id="nback-grid"></div>
+    </div>
+    <div class="progress" id="nback-prog"></div>
+    <div class="controls">
+      <button class="btn primary" id="nback-start">开始训练</button>
+      <button class="btn line" id="nback-resp" style="display:none">匹配 (空格)</button>
+    </div>
+    <div class="result" style="display:none">
+      <div class="r-top"><span class="meta">本局成绩</span><span class="r-score">0</span></div>
+      <div><span class="meta">准确率 </span><b class="r-acc">0%</b> <span class="r-extra muted" style="margin-left:.4rem"></span></div>
+      <div class="controls">
+        <button class="btn primary sm save-btn" id="nback-save">保存成绩</button>
+        <a class="btn primary sm" href="/login" id="nback-login" style="display:none">登录后保存</a>
+        <button class="btn line sm" id="nback-again">再玩一次</button>
+      </div>
+    </div>
+  </article>
+
+  <!-- Stroop -->
+  <article class="panel game" id="panel-stroop">
+    <div class="ghead"><span class="meta">GAME 02</span><h3>Stroop 干扰抑制</h3></div>
+    <p class="desc">字是"红"但墨色可能是蓝。请点<i>墨色</i>对应的按钮,而不是读字。练的是抑制习惯反应、守住目标。</p>
+    <div class="tags"><span class="tag accent">注意</span><span class="tag accent">执行</span></div>
+    <div class="stage" id="stroop-stage">
+      <div class="stroop-word" id="stroop-word"></div>
+      <div class="cbtns" id="stroop-btns"></div>
+      <div class="hint" id="stroop-hint">点"开始训练"后,按墨色点击下方按钮</div>
+    </div>
+    <div class="progress" id="stroop-prog"></div>
+    <div class="controls">
+      <button class="btn primary" id="stroop-start">开始训练</button>
+    </div>
+    <div class="result" style="display:none">
+      <div class="r-top"><span class="meta">本局成绩</span><span class="r-score">0</span></div>
+      <div><span class="meta">准确率 </span><b class="r-acc">0%</b> <span class="r-extra muted" style="margin-left:.4rem"></span></div>
+      <div class="controls">
+        <button class="btn primary sm save-btn" id="stroop-save">保存成绩</button>
+        <a class="btn primary sm" href="/login" id="stroop-login" style="display:none">登录后保存</a>
+        <button class="btn line sm" id="stroop-again">再玩一次</button>
+      </div>
+    </div>
+  </article>
+
+  <!-- Go/NoGo -->
+  <article class="panel game" id="panel-gonogo">
+    <div class="ghead"><span class="meta">GAME 03</span><h3>Go / No-Go 冲动控制</h3></div>
+    <p class="desc">出现<b>绿圆</b>按"反应"(空格);出现<b>红方</b>千万别按。练的是抑制冲动、在红线上刹得住车。</p>
+    <div class="tags"><span class="tag accent">执行</span><span class="tag accent">心稳</span></div>
+    <div class="stage" id="gonogo-stage">
+      <div class="gonogo-shape" id="gonogo-shape"></div>
+    </div>
+    <div class="progress" id="gonogo-prog"></div>
+    <div class="controls">
+      <button class="btn primary" id="gonogo-start">开始训练</button>
+      <button class="btn line" id="gonogo-resp" style="display:none">反应 (空格)</button>
+    </div>
+    <div class="result" style="display:none">
+      <div class="r-top"><span class="meta">本局成绩</span><span class="r-score">0</span></div>
+      <div><span class="meta">准确率 </span><b class="r-acc">0%</b> <span class="r-extra muted" style="margin-left:.4rem"></span></div>
+      <div class="controls">
+        <button class="btn primary sm save-btn" id="gonogo-save">保存成绩</button>
+        <a class="btn primary sm" href="/login" id="gonogo-login" style="display:none">登录后保存</a>
+        <button class="btn line sm" id="gonogo-again">再玩一次</button>
+      </div>
+    </div>
+  </article>
+
+</div>
+
+<!-- ============ 训练战绩 ============ -->
+<div class="sec reveal d2" style="margin-top:2.5rem"><span class="no">★</span><h2>训练战绩 · 六维训练雷达</h2><span class="line"></span></div>
+<div class="reveal d2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+  <div class="panel" style="padding:1.3rem">
+    <span class="meta">训练能力雷达(实战表现)</span>
+    <div class="radar-wrap">
+      <svg id="trainRadar" viewBox="0 0 340 340" role="img" aria-label="训练六维雷达图"></svg>
+    </div>
+    <p class="muted" style="font-size:.8rem;text-align:center;margin:.4rem 0 0">
+      {% if has_train %}由你近 60 次训练成绩按维度聚合。{% else %}完成任意一局训练后,这里会画出你的实战雷达。{% endif %}
+    </p>
+  </div>
+  <div class="panel" style="padding:1.3rem">
+    <span class="meta">各项最佳</span>
+    <div class="best-grid">
+      <div class="best"><div class="bs" id="best-nback">—</div><div class="bn">N-back</div></div>
+      <div class="best"><div class="bs" id="best-stroop">—</div><div class="bn">Stroop</div></div>
+      <div class="best"><div class="bs" id="best-gonogo">—</div><div class="bn">Go/No-Go</div></div>
+    </div>
+    <span class="meta">最近训练</span>
+    <div id="recent-list" style="margin-top:.4rem">
+      {% if recent %}
+      {% for s in recent %}
+      <div class="recent-row">
+        <span class="rg">{{ game_labels[s.game] }}</span>
+        <span class="rs">{{ s.score }} 分</span>
+        <span class="rt">{{ s.created_at[5:16] }}</span>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="muted" style="padding:.6rem 0">还没有训练记录,挑一款游戏开始吧。</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const isGuest = {{ 'true' if is_guest else 'false' }};
+const TRAIN_RADAR = {{ train_radar_json | safe }};
+const TRAIN_DIMS = [
+  {k:"attention", name:"注意"}, {k:"memory", name:"记忆"},
+  {k:"reasoning", name:"逻辑"}, {k:"executive", name:"执行"},
+  {k:"metacog", name:"元认知"}, {k:"regulation", name:"心稳"}
+];
+
+// ---------- 公共工具 ----------
+function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+function median(arr){ if(!arr.length) return 0; const a=[...arr].sort((x,y)=>x-y); const m=Math.floor(a.length/2); return a.length%2? a[m] : Math.round((a[m-1]+a[m])/2); }
+function flash(stage, ok){ stage.classList.add(ok?'ok':'bad'); setTimeout(()=>stage.classList.remove(ok?'ok':'bad'),260); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+let spaceHandler=null;
+window.addEventListener('keydown',e=>{ if(e.code==='Space'){ e.preventDefault(); if(spaceHandler) spaceHandler(); }});
+
+// ---------- 训练雷达 ----------
+function drawTrainRadar(scores){
+  const cx=170,cy=170,R=120,n=TRAIN_DIMS.length;
+  const ang=i=>(-90+i*360/n)*Math.PI/180;
+  let grid='',axes='',labels='',pts='',dots='';
+  [0.25,0.5,0.75,1].forEach(f=>{ let p=''; for(let i=0;i<n;i++){const x=cx+R*f*Math.cos(ang(i)),y=cy+R*f*Math.sin(ang(i));p+=(x.toFixed(1)+','+y.toFixed(1)+' ');} grid+='<polygon class="radar-grid" points="'+p.trim()+'"/>'; });
+  TRAIN_DIMS.forEach((d,i)=>{
+    const x=cx+R*Math.cos(ang(i)),y=cy+R*Math.sin(ang(i));
+    axes+='<line class="radar-axis" x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'"/>';
+    const lx=cx+(R+26)*Math.cos(ang(i)),ly=cy+(R+26)*Math.sin(ang(i));
+    let anchor='middle'; if(lx<cx-5)anchor='end'; else if(lx>cx+5)anchor='start';
+    labels+='<text class="radar-label" x="'+lx.toFixed(1)+'" y="'+(ly+3).toFixed(1)+'" text-anchor="'+anchor+'">'+d.name+'</text>';
+    const w = scores && scores[d.k]!=null ? scores[d.k] : 50;
+    const dr=R*(w/100), dx=cx+dr*Math.cos(ang(i)), dy=cy+dr*Math.sin(ang(i));
+    pts+=(dx.toFixed(1)+','+dy.toFixed(1)+' ');
+    dots+='<circle class="radar-dot" cx="'+dx.toFixed(1)+'" cy="'+dy.toFixed(1)+'" r="3"/>';
+  });
+  const svg=document.getElementById('trainRadar');
+  svg.innerHTML='<defs><linearGradient id="trGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#34d3e6" stop-opacity=".55"/><stop offset="100%" stop-color="#8b5cf6" stop-opacity=".55"/></linearGradient></defs>'+grid+axes+'<polygon class="radar-area" points="'+pts.trim()+'"/>'+dots+labels;
+}
+drawTrainRadar(TRAIN_RADAR);
+
+// ---------- 保存成绩 ----------
+function saveResult(game, score, acc, rt_ms, level){
+  fetch('/api/train/submit',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({game,score,accuracy:acc,rt_ms,level})})
+    .then(r=> r.ok? r.json(): Promise.reject(r))
+    .then(d=>{ toast('成绩已保存 +{{ growth.XP_TRAIN if growth else 12 }} XP'); refreshHistory(); })
+    .catch(()=> toast('保存失败,请重试'));
+}
+function refreshHistory(){
+  fetch('/api/train/history').then(r=>r.json()).then(d=>{
+    drawTrainRadar(d.radar||{});
+    if(d.best.nback!=null) document.getElementById('best-nback').textContent=d.best.nback;
+    if(d.best.stroop!=null) document.getElementById('best-stroop').textContent=d.best.stroop;
+    if(d.best.gonogo!=null) document.getElementById('best-gonogo').textContent=d.best.gonogo;
+    const list=document.getElementById('recent-list');
+    if(d.recent && d.recent.length){
+      list.innerHTML=d.recent.map(s=>{
+        const lab={nback:'N-back',stroop:'Stroop',gonogo:'Go/No-Go'}[s.game]||s.game;
+        const t=(s.created_at||'').slice(5,16);
+        return '<div class="recent-row"><span class="rg">'+lab+'</span><span class="rs">'+s.score+' 分</span><span class="rt">'+t+'</span></div>';
+      }).join('');
+    }
+  }).catch(()=>{});
+}
+
+// 结果卡填充
+function showResult(game, data){
+  const panel=document.getElementById('panel-'+game);
+  const r=panel.querySelector('.result');
+  r.querySelector('.r-score').textContent=data.score;
+  r.querySelector('.r-acc').textContent=Math.round(data.acc*100)+'%';
+  r.querySelector('.r-extra').textContent=data.extra||'';
+  r.style.display='flex';
+  const sb=panel.querySelector('.save-btn'), lb=panel.querySelector('a[href="/login"]');
+  if(isGuest){ sb.style.display='none'; if(lb) lb.style.display='inline-block'; }
+  else { sb.style.display='inline-block'; if(lb) lb.style.display='none';
+    sb.onclick=()=>saveResult(game, data.score, data.acc, data.rt_ms||null, data.level||null); }
+}
+
+// ====================================================
+// GAME 01 · N-back
+// ====================================================
+let nbackN=2;
+(function(){
+  const grid=document.getElementById('nback-grid');
+  for(let i=0;i<9;i++){ const c=document.createElement('div'); c.className='ncell'; grid.appendChild(c); }
+  const cells=grid.children;
+  const stage=document.getElementById('nback-stage');
+  const prog=document.getElementById('nback-prog');
+  const startBtn=document.getElementById('nback-start');
+  const respBtn=document.getElementById('nback-resp');
+  document.getElementById('nback-diff').textContent='n='+nbackN;
+
+  function setProgress(i,total){ prog.textContent='进度 '+i+' / '+total+'  ·  难度 n='+nbackN; }
+
+  startBtn.onclick=async()=>{
+    startBtn.style.display='none'; respBtn.style.display='inline-block';
+    const T=20, N=nbackN, seq=[], responses=new Array(T).fill(false);
+    for(let i=0;i<T;i++){
+      if(i<N){ seq.push({pos:Math.floor(Math.random()*9),target:false}); }
+      else if(Math.random()<0.4){ seq.push({pos:seq[i-N].pos,target:true}); }
+      else { let p; do{ p=Math.floor(Math.random()*9); }while(p===seq[i-N].pos); seq.push({pos:p,target:false}); }
+    }
+    for(let i=0;i<T;i++){
+      setProgress(i+1,T);
+      cells[seq[i].pos].classList.add('on');
+      spaceHandler=()=>{ responses[i]=true; };
+      respBtn.onclick=()=>{ responses[i]=true; };
+      await wait(800);
+      cells[seq[i].pos].classList.remove('on');
+      spaceHandler=null; respBtn.onclick=null;
+      await wait(350);
+    }
+    let hits=0,miss=0,fa=0,cr=0;
+    seq.forEach((s,i)=>{ const r=responses[i];
+      if(s.target&&r)hits++; else if(s.target&&!r)miss++; else if(!s.target&&r)fa++; else cr++; });
+    const acc=(hits+cr)/T;
+    let score=Math.round(Math.min(100, acc*100*(0.5+0.1*N)));
+    if(score>=75) nbackN=Math.min(5,nbackN+1); else if(score<55) nbackN=Math.max(2,nbackN-1);
+    document.getElementById('nback-diff').textContent='n='+nbackN;
+    prog.textContent='完成 · 下次难度 n='+nbackN;
+    respBtn.style.display='none';
+    showResult('nback',{score,acc,extra:'命中 '+hits+' · 漏报 '+miss+' · 误报 '+fa, level:N});
+  };
+  document.getElementById('nback-again').onclick=()=>{ document.getElementById('panel-nback').querySelector('.result').style.display='none'; startBtn.style.display='inline-block'; prog.textContent=''; };
+})();
+
+// ====================================================
+// GAME 02 · Stroop
+// ====================================================
+(function(){
+  const COLORS=[{k:'red',label:'红',c:'#f0655a'},{k:'blue',label:'蓝',c:'#34d3e6'},{k:'green',label:'绿',c:'#5fd38a'},{k:'purple',label:'紫',c:'#8b5cf6'}];
+  const word=document.getElementById('stroop-word');
+  const btns=document.getElementById('stroop-btns');
+  const hint=document.getElementById('stroop-hint');
+  const stage=document.getElementById('stroop-stage');
+  const prog=document.getElementById('stroop-prog');
+  const startBtn=document.getElementById('stroop-start');
+  let resolve=null;
+  COLORS.forEach(c=>{ const b=document.createElement('button'); b.className='cbtn'; b.type='button';
+    b.innerHTML='<span class="sw" style="background:'+c.c+'"></span><span class="cl">'+c.label+'</span>';
+    b.onclick=()=>{ if(resolve) resolve(c.k); }; btns.appendChild(b); });
+  startBtn.onclick=async()=>{
+    startBtn.style.display='none'; hint.textContent='按墨色点击';
+    const T=20, correct=[]; const rts=[];
+    for(let i=0;i<T;i++){
+      prog.textContent='进度 '+(i+1)+' / '+T;
+      const w=COLORS[Math.floor(Math.random()*4)], ink=COLORS[Math.floor(Math.random()*4)];
+      word.textContent=w.label; word.style.color=ink.c;
+      const t0=performance.now(); let answered=false;
+      resolve=(choice)=>{ if(answered)return; answered=true; const rt=Math.round(performance.now()-t0);
+        if(choice===ink.k){ correct.push(true); rts.push(rt); flash(stage,true);} else flash(stage,false); };
+      await wait(1500);
+      resolve=null; word.textContent=''; hint.textContent='…';
+      await wait(300);
+    }
+    const acc=correct.length/T;
+    const med=median(rts);
+    const speed=Math.max(0,Math.min(1,(1100-med)/900));
+    let score=Math.round(acc*100*0.6 + speed*100*0.4);
+    prog.textContent='完成'; hint.textContent='点"开始训练"再来一局';
+    showResult('stroop',{score,acc,extra:'正确 '+correct.length+'/'+T+' · 中位反应 '+med+'ms', rt_ms:med});
+    startBtn.style.display='inline-block';
+  };
+  document.getElementById('stroop-again').onclick=()=>{ document.getElementById('panel-stroop').querySelector('.result').style.display='none'; startBtn.style.display='inline-block'; prog.textContent=''; };
+})();
+
+// ====================================================
+// GAME 03 · Go / No-Go
+// ====================================================
+(function(){
+  const shape=document.getElementById('gonogo-shape');
+  const stage=document.getElementById('gonogo-stage');
+  const prog=document.getElementById('gonogo-prog');
+  const startBtn=document.getElementById('gonogo-start');
+  const respBtn=document.getElementById('gonogo-resp');
+  let resolve=null;
+  startBtn.onclick=async()=>{
+    startBtn.style.display='none'; respBtn.style.display='inline-block';
+    const T=24, goRatio=0.7, hits=[], miss=0, comm=0, cw=0, gorts=[];
+    for(let i=0;i<T;i++){
+      prog.textContent='进度 '+(i+1)+' / '+T;
+      const isGo=Math.random()<goRatio;
+      shape.innerHTML=isGo? '<div class="go"></div>' : '<div class="nogo"></div>';
+      const t0=performance.now(); let answered=false;
+      resolve=(pressed)=>{ if(answered)return; answered=true;
+        if(isGo){ if(pressed){ hits.push(true); gorts.push(Math.round(performance.now()-t0)); flash(stage,true);} }
+        else { if(pressed){ comm++; flash(stage,false);} } };
+      spaceHandler=()=>resolve(true);
+      respBtn.onclick=()=>resolve(true);
+      await wait(750);
+      if(!answered){ if(isGo) miss++; else cw++; if(isGo) flash(stage,false); }
+      resolve=null; spaceHandler=null; respBtn.onclick=null; shape.innerHTML='';
+      await wait(350);
+    }
+    const acc=(hits.length+cw)/T;
+    const cr=comm/T;
+    let score=Math.round(Math.min(100, acc*100*(1-0.6*cr)));
+    const meanGo=gorts.length? Math.round(gorts.reduce((a,b)=>a+b,0)/gorts.length):null;
+    prog.textContent='完成'; respBtn.style.display='none';
+    showResult('gonogo',{score,acc,extra:'命中 '+hits.length+' · 漏过 '+miss+' · 误冲 '+comm, rt_ms:meanGo});
+    startBtn.style.display='inline-block';
+  };
+  document.getElementById('gonogo-again').onclick=()=>{ document.getElementById('panel-gonogo').querySelector('.result').style.display='none'; startBtn.style.display='inline-block'; prog.textContent=''; };
+})();
+</script>
+{% endblock %}

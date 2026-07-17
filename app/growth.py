@@ -12,6 +12,7 @@ XP_DIAGNOSIS = 50
 XP_ENTRY = 10
 XP_CLASSIC = 5
 XP_POST = 15
+XP_TRAIN = 12
 XP_DAILY = 5
 
 
@@ -104,6 +105,14 @@ def _award_badges(badges, user_id, action, xp, streak):
     )["c"]
     if action == "classic" and fav_count >= 10:
         add("book10", "书海拾遗")
+    if action == "train":
+        add("train1", "勤练 · 首次训练")
+    if action == "train":
+        train_count = db.query_one(
+            "SELECT COUNT(*) AS c FROM training_sessions WHERE user_id=?", (user_id,)
+        )["c"]
+        if train_count >= 10:
+            add("train10", "百炼 · 训练十次")
     return badges
 
 

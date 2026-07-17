@@ -21,6 +21,17 @@
 <p class="muted">[{{ e.entry_type }}] {{ e.created_at }}</p>
 <p>{{ e.raw_text }}</p>
 
+{% if e.ai_commentary %}
+<div class="analysis" style="margin-top:.4rem">
+  <div>
+    <span class="tag grad">教练点评</span>
+    {% if e.coach_score %}<span class="tag accent" style="margin-left:.4rem">觉察 {{ e.coach_score }}/100</span>{% endif %}
+    <p>{{ e.ai_commentary }}</p>
+  </div>
+  {% if e.ai_suggestion %}<div><span class="tag jade">建议</span><p>{{ e.ai_suggestion }}</p></div>{% endif %}
+</div>
+{% endif %}
+
 {% if e.ai_followup %}
 <p><strong>教练追问:</strong>{{ e.ai_followup }}</p>
 {% if not e.user_reflection %}

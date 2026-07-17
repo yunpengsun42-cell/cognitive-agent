@@ -11,6 +11,7 @@ from .prompts import (
     build_weekly_prompt,
     build_training_question_prompt,
     build_scenario_analysis_prompt,
+    build_entry_coach_prompt,
 )
 
 
@@ -155,6 +156,49 @@ def submit_reflection(entry_id, text):
 
 def submit_outcome(entry_id, text):
     db.execute("UPDATE entries SET outcome=? WHERE id=?", (text, entry_id))
+
+
+def generate_entry_coaching(entry_id):
+    """记一笔后自动生成 AI 教练点评 + 觉察度评分(0-100),入库到 entries。"""
+    row = db.query_one("SELECT * FROM entries WHERE id=?", (entry_id,))
+    if not row:
+        return None
+    raw = call_llm(
+        SYSTEM_PROMPT,
+        build_entry_coach_prompt(row["raw_text"], get_profile_text(row["user_id"])),
+        temperature=0.7,
+    )
+    coach = _parse_entry_coach(raw)
+    db.execute(
+        "UPDATE entries SET ai_commentary=?, coach_score=?, ai_suggestion=? WHERE id=?",
+        (coach.get("commentary"), coach.get("score"), coach.get("suggestion"), entry_id),
+    )
+    return coach
+
+
+def _parse_entry_coach(raw):
+    fallback = {"commentary": "", "score": None, "suggestion": ""}
+    if not raw or "离线兜底" in raw:
+        return fallback
+    try:
+        txt = raw.strip()
+        if txt.startswith("```"):
+            txt = txt.split("```", 2)[1]
+            if txt.startswith("json"):
+                txt = txt[4:]
+        data = json.loads(txt)
+        score = None
+        try:
+            score = max(1, min(100, int(float(data.get("score")))))
+        except (TypeError, ValueError):
+            score = None
+        return {
+            "commentary": (data.get("commentary") or "").strip(),
+            "score": score,
+            "suggestion": (data.get("suggestion") or "").strip(),
+        }
+    except Exception:
+        return fallback
 
 
 def generate_scenario_question(user_id=None):
@@ -308,3 +352,79 @@ def generate_weekly_summary(user_id=None):
         (uid, week_start, week_end, summary, streak, _now()),
     )
     return summary
+
+
+# ---------------- 真实训练引擎 ----------------
+
+# 每个游戏主要训练的认知维度(用于把成绩映射到六维雷达)
+TRAIN_GAME_DIMS = {
+    "nback": ["memory", "attention"],
+    "stroop": ["attention", "executive"],
+    "gonogo": ["executive", "regulation"],
+}
+
+GAME_LABELS = {
+    "nback": "N-back 工作记忆",
+    "stroop": "Stroop 干扰抑制",
+    "gonogo": "Go/No-Go 冲动控制",
+}
+
+
+def save_training_session(user_id, game, score, accuracy=None, rt_ms=None, level=None):
+    uid = _uid(user_id)
+    dims = ",".join(TRAIN_GAME_DIMS.get(game, []))
+    db.execute(
+        "INSERT INTO training_sessions "
+        "(user_id, game, score, accuracy, rt_ms, level, dim_keys, created_at) "
+        "VALUES (?,?,?,?,?,?,?,?)",
+        (uid, game, score, accuracy, rt_ms, level, dims, _now()),
+    )
+
+
+def recent_training(user_id=None, limit=20):
+    uid = _uid(user_id)
+    rows = db.query(
+        "SELECT * FROM training_sessions WHERE user_id=? ORDER BY id DESC LIMIT ?",
+        (uid, limit),
+    )
+    return [dict(r) for r in rows]
+
+
+def training_best(user_id=None):
+    """返回每个游戏的历史最佳成绩 {game: best_score}。"""
+    uid = _uid(user_id)
+    rows = db.query(
+        "SELECT game, MAX(score) AS best FROM training_sessions "
+        "WHERE user_id=? GROUP BY game",
+        (uid,),
+    )
+    return {r["game"]: r["best"] for r in rows}
+
+
+def get_training_radar(user_id=None):
+    """按维度聚合最近训练成绩,返回 6 维分数(无数据返回 None)。"""
+    uid = _uid(user_id)
+    rows = db.query(
+        "SELECT score, dim_keys FROM training_sessions "
+        "WHERE user_id=? ORDER BY id DESC LIMIT 60",
+        (uid,),
+    )
+    if not rows:
+        return None
+    sums = {k: [0, 0] for k in
+            ("attention", "memory", "reasoning", "executive", "metacog", "regulation")}
+    for r in rows:
+        try:
+            sc = int(r["score"])
+        except (TypeError, ValueError):
+            continue
+        keys = [k for k in (r["dim_keys"] or "").split(",") if k in sums]
+        if not keys:
+            continue
+        for k in keys:
+            sums[k][0] += sc
+            sums[k][1] += 1
+    out = {}
+    for k, (s, c) in sums.items():
+        out[k] = round(s / c) if c else 50
+    return out

@@ -115,3 +115,17 @@ def build_scenario_analysis_prompt(question, answer, profile_text):
         f"用户画像:\n{profile_text}\n\n"
         f"场景题:\n{question}\n\n用户作答:\n{answer}"
     )
+
+
+def build_entry_coach_prompt(entry_text, profile_text):
+    return (
+        "用户刚提交了一条'记一笔'训练记录(一次真实发生的念头 / 选择 / 情绪)。"
+        "请作为认知教练,对他的这条记录做即时点评与觉察度评分。\n"
+        "严格只输出如下 JSON(不要多余文字、不要代码块标记):\n"
+        "{\n"
+        '  "commentary": "针对他这条记录里具体的一句话或判断,点出亮点或可觉察的盲点(2-3 句,直接、口语化)",\n'
+        '  "score": 0-100 的觉察度评分(反映他是否看清了自己的念头/偏差/情绪机制,真实不讨好),\n'
+        '  "suggestion": "他接下来可以刻意练习的一件具体小事(1-2 句)"\n'
+        "}\n\n"
+        f"用户画像:\n{profile_text}\n\n用户记录:\n{entry_text}"
+    )
